@@ -1,0 +1,215 @@
+<error_handling_instructions>
+  <overview>
+    Centralized guidance for detecting, classifying, formatting, logging, and recovering from errors in generated Python MCP servers.
+    Implements consistent taxonomy: UserInput, Forbidden, NotFound, Timeout, Internal, Cancelled.
+  </overview>
+
+  <principles>
+    <principle name="classification_first">Determine error category before formatting response.</principle>
+    <principle name="least_leakage">Return minimal necessary info to client; log details internally.</principle>
+    <principle name="predictable_shape">Every error response has identical top-level keys.</principle>
+    <principle name="actionability">UserInput errors include a concrete correction hint.</principle>
+    <principle name="non_masking">Do not wrap already-classified error objects; pass through.</principle>
+  </principles>
+
+  <error_response_schema>
+    <field name="ok" type="boolean" required="true">Always false for errors.</field>
+    <field name="code" type="string" required="true">One of the taxonomy values.</field>
+    <field name="message" type="string" required="true">Human-readable summary.</field>
+    <field name="hint" type="string" required="false">Actionable remediation guidance (UserInput only normally).</field>
+    <field name="detail" type="string" required="false">Internal diagnostic excerpt (avoid stack traces).</field>
+    <field name="correlation_id" type="string" required="false">Generated identifier for tracing (optional enhancement).</field>
+  </error_response_schema>
+
+  <taxonomy>
+    <category id="UserInput" retriable="yes" user_fixable="yes">
+      <examples>
+        <example>Unknown parameter key</example>
+        <example>Value out of allowed range</example>
+        <example>Malformed JSON config</example>
+      </examples>
+      <hint_style>Describe offending field + acceptable range / format.</hint_style>
+    </category>
+    <category id="Forbidden" retriable="no" user_fixable="maybe">
+      <examples>
+        <example>Path outside allowed root</example>
+        <example>Disallowed command invocation</example>
+      </examples>
+      <hint_style>State allowed roots or permitted commands.</hint_style>
+    </category>
+    <category id="NotFound" retriable="maybe" user_fixable="yes">
+      <examples>
+        <example>Missing file in allowed root</example>
+        <example>Unknown background task id</example>
+      </examples>
+      <hint_style>Suggest verifying name or listing available items.</hint_style>
+    </category>
+    <category id="Timeout" retriable="yes" user_fixable="partially">
+      <examples>
+        <example>Long-running filesystem scan exceeded limit</example>
+      </examples>
+      <hint_style>Recommend reducing scope or raising timeout if permitted.</hint_style>
+    </category>
+    <category id="Internal" retriable="maybe" user_fixable="no">
+      <examples>
+        <example>Unhandled exception in domain logic</example>
+        <example>Failure importing optional dependency</example>
+      </examples>
+      <hint_style>Generic apology; instruct to check logs.</hint_style>
+    </category>
+    <category id="Cancelled" retriable="yes" user_fixable="n/a">
+      <examples>
+        <example>User cancellation token triggered</example>
+      </examples>
+      <hint_style>Inform that partial results may be incomplete.</hint_style>
+    </category>
+  </taxonomy>
+
+  <classification_decision_tree>
+    <step order="1">If operation cancelled (task.cancelled() or cancellation flag) -> Cancelled.</step>
+    <step order="2">If explicit validation failure (ValueError / custom ValidationError) -> UserInput.</step>
+    <step order="3">If policy guard rejects (e.g., path/command) -> Forbidden.</step>
+    <step order="4">If resource absence confirmed (os.path.exists == False) -> NotFound.</step>
+    <step order="5">If timeout wrapper triggers asyncio.TimeoutError -> Timeout.</step>
+    <step order="6">Else -> Internal.</step>
+  </classification_decision_tree>
+
+  <timeout_handling>
+    <recommended_wrapper><![CDATA[
+import asyncio
+from errors import timeout_error, internal_error
+
+async def run_with_timeout(coro, seconds: float):
+    try:
+        return await asyncio.wait_for(coro, timeout=seconds)
+    except asyncio.TimeoutError:
+        return timeout_error(f"Operation exceeded {seconds:.1f}s limit")
+    except Exception as exc:
+        # Upstream will likely classify as Internal anyway
+        return internal_error("Unhandled internal failure", detail=str(exc)[:160])
+]]></recommended_wrapper>
+    <notes>
+      <note>Use per-tool TIMEOUT_SECONDS metadata to adjust.</note>
+      <note>Streaming tools should yield partial progress before timeout where feasible.</note>
+    </notes>
+  </timeout_handling>
+
+  <cancellation_strategy>
+    <tracking>
+      <guideline>Store active tasks in registry keyed by token.</guideline>
+      <guideline>Expose cancel_task tool returning success bool.</guideline>
+    </tracking>
+    <streaming_check>Inspect cancellation flag between chunk yields; emit cancellation event then Cancelled error payload.</streaming_check>
+  </cancellation_strategy>
+
+  <logging>
+    <approach>Log JSON to stderr with code, message, internal detail, correlation_id.</approach>
+    <redaction>Mask tokens / secrets using regex before write.</redaction>
+    <example><![CDATA[
+log("error", code=err["code"], message=err["message"], detail=err.get("detail"))
+]]></example>
+  </logging>
+
+  <common_scenarios>
+    <scenario name="UnknownParam">
+      <input>{"foo": 1}</input>
+      <detected_by>validator scanning allowed keys</detected_by>
+      <response>{"ok": false, "code": "UserInput", "message": "Unknown params: {'foo'}", "hint": "Remove unsupported keys: {'foo'}"}</response>
+    </scenario>
+    <scenario name="PathTraversalAttempt">
+      <input>{"path": "../../etc"}</input>
+      <detected_by>ensure_path_allowed()</detected_by>
+      <response>{"ok": false, "code": "Forbidden", "message": "Path outside allowed root"}</response>
+    </scenario>
+    <scenario name="MissingFile">
+      <input>{"path": "data/missing.txt"}</input>
+      <detected_by>os.path.exists check</detected_by>
+      <response>{"ok": false, "code": "NotFound", "message": "File not found: data/missing.txt"}</response>
+    </scenario>
+  </common_scenarios>
+
+  <anti_patterns>
+    <anti_pattern name="generic_exception_swallow">
+      <problem>catch Exception: return Internal without logging</problem>
+      <solution>Log internal detail; provide sanitized external message.</solution>
+    </anti_pattern>
+    <anti_pattern name="stack_trace_exposure">
+      <problem>Raw traceback returned to client</problem>
+      <solution>Truncate to summary; keep traceback only in stderr logs.</solution>
+    </anti_pattern>
+    <anti_pattern name="misclassified_validation">
+      <problem>Validation errors reported as Internal</problem>
+      <solution>Isolate validator and catch its exceptions early.</solution>
+    </anti_pattern>
+  </anti_patterns>
+
+  <recovery_workflows>
+    <workflow code="UserInput">
+      <action>Return hint with expected format or allowed keys.</action>
+      <action>Suggest minimal valid example if space permits.</action>
+    </workflow>
+    <workflow code="Forbidden">
+      <action>List allowed roots or commands subset (max 5 examples).</action>
+    </workflow>
+    <workflow code="Timeout">
+      <action>Advise reducing scope or splitting request.</action>
+      <action>If streaming, remind partial data may have been emitted.</action>
+    </workflow>
+    <workflow code="Internal">
+      <action>Provide correlation_id; instruct to view logs.</action>
+      <action>Optionally suggest enabling debug mode.</action>
+    </workflow>
+  </recovery_workflows>
+
+  <diff_example_integration><![CDATA[
+# Original snippet (tools.py)
+async def tool_list_files(params: dict):
+    entries = []
+    for e in os.scandir(params["path"]):
+        entries.append(e.name)
+    return {"ok": True, "entries": entries}
+
+# Improved with validation + error classification
+async def tool_list_files(params: dict):
+    from errors import user_input_error, forbidden_error, internal_error, not_found_error
+    raw_path = params.get("path")
+    if not isinstance(raw_path, str):
+        return user_input_error("Parameter 'path' must be string", hint="Provide relative path inside data root")
+    try:
+        base = ensure_path_allowed(raw_path)
+    except ValueError:
+        return forbidden_error("Path outside allowed root")
+    if not base.exists():
+        return not_found_error(f"File or directory not found: {raw_path}")
+    try:
+        entries = []
+        for e in os.scandir(base):
+            if len(entries) >= int(params.get("limit", 200)):
+                break
+            entries.append(e.name)
+        return {"ok": True, "entries": entries}
+    except Exception as exc:
+        return internal_error("Failed to list directory", detail=str(exc)[:160])
+]]></diff_example_integration>
+
+  <testing_guidelines>
+    <test name="validation_unknown_param">Expect UserInput code and hint containing offending key.</test>
+    <test name="forbidden_path">Attempt ../../ outside root -> Forbidden.</test>
+    <test name="timeout">Simulate slow operation with lowered timeout to force Timeout classification.</test>
+    <test name="internal_failure">Inject fault (e.g., raise RuntimeError in logic) -> Internal.</test>
+  </testing_guidelines>
+
+  <quality_checklist>
+    <item>All tools wrap validation exceptions -> UserInput.</item>
+    <item>No raw tracebacks in client responses.</item>
+    <item>Every streaming tool emits explicit error event on failure.</item>
+    <item>Timeout wrapper present around potentially slow operations.</item>
+    <item>Forbidden operations produce specific policy message.</item>
+  </quality_checklist>
+
+  <extension_ideas>
+    <idea>Add correlation_id generation for cross-log tracing.</idea>
+    <idea>Introduce metrics counting errors by code for diagnostics.</idea>
+    <idea>Configurable per-tool timeout overrides in config.json.</idea>
+  </extension_ideas>
+</error_handling_instructions>

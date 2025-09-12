@@ -1,0 +1,195 @@
+<examples>
+  <overview>End-to-end examples demonstrating typical use of the MCP Generator mode: basic server creation, adding streaming tool, adding background task & cancellation, configuration reload extension, and safety hardening iteration.</overview>
+
+  <example name="basic_new_server">
+    <description>Create initial server from plain English spec with one tool.</description>
+    <user_request><![CDATA[
+"Create an MCP server that returns platform info and lists files in a safe directory."
+]]></user_request>
+    <mode_response_steps>
+      <step number="1" title="Clarify Requirements">Ask for root directory constraints, file listing limits.</step>
+      <step number="2" title="Spec Confirmation">Summarize tools: system_info, list_files (limit, path, include_sizes).</step>
+      <step number="3" title="Structure Plan">Propose mcp_server package with __main__.py, server.py, tools.py, safety.py.</step>
+      <step number="4" title="Scaffold Files">Create minimal runnable skeleton.</step>
+      <step number="5" title="Implement Tools">Add validation + logic separation.</step>
+      <step number="6" title="Run Instructions">Provide uvx python -m mcp_server command.</step>
+    </mode_response_steps>
+    <resulting_file_tree><![CDATA[
+mcp_server/
+  __init__.py
+  __main__.py
+  server.py
+  tools.py
+  safety.py
+]]></resulting_file_tree>
+    <key_points>
+      <point>Incremental scaffold then implement.</point>
+      <point>Safety root enforced in safety.ensure_path_allowed.</point>
+    </key_points>
+  </example>
+
+  <example name="adding_streaming_tool">
+    <description>Extend existing server with streaming directory listing tool.</description>
+    <user_request><![CDATA[
+"Add a streaming tool that lists up to N entries of a directory and sends progress."
+]]></user_request>
+    <diff_strategy>
+      <step>Read existing tools.py</step>
+      <step>Add new streaming_tools.py file</step>
+      <step>Update server registration to include stream_directory_listing</step>
+    </diff_strategy>
+    <important_considerations>
+      <item>Emit start, chunk, complete events in order.</item>
+      <item>Cancellation check per iteration.</item>
+      <item>Respect limit param default (200).</item>
+    </important_considerations>
+  </example>
+
+  <example name="background_task_and_cancellation">
+    <description>Add periodic cache refresh and cancellation tool.</description>
+    <user_request><![CDATA[
+"Add a background task that refreshes a cache every minute and a tool to cancel tasks by id."
+]]></user_request>
+    <plan>
+      <step>Create background.py with TaskRegistry.</step>
+      <step>Register refresh_cache task in server startup hook.</step>
+      <step>Add tool cancel_task taking token/id.</step>
+      <step>Expose status resource listing tasks.</step>
+    </plan>
+    <safety_notes>
+      <note>Ensure task cancellation cleans up references.</note>
+      <note>No unbounded growth of tasks dict.</note>
+    </safety_notes>
+  </example>
+
+  <example name="configuration_reload_extension">
+    <description>Introduce config management with reload tool.</description>
+    <user_request><![CDATA[
+"Allow reloading configuration from config.json without restarting server."
+]]></user_request>
+    <steps>
+      <step>Create config.py implementing load_config, get_config, reload_config.</step>
+      <step>Add tool reload_config returning new config.</step>
+      <step>Add resource config_snapshot exposing current config (redacted sensitive keys).</step>
+      <step>Document failure modes (missing version field).</step>
+    </steps>
+    <error_cases>
+      <case>Invalid JSON -> UserInput</case>
+      <case>Schema missing keys -> UserInput with hint</case>
+      <case>IO error -> Internal (non-existent file)</case>
+    </error_cases>
+  </example>
+
+  <example name="safety_hardening_iteration">
+    <description>Add subprocess allowlist and path traversal guards after user requests command execution feature.</description>
+    <user_request><![CDATA[
+"Add a tool to run 'git status' and 'git rev-parse HEAD' but nothing else."
+]]></user_request>
+    <implementation>
+      <step>Create subprocess_tools.py with ALLOWED_COMMANDS mapping.</step>
+      <step>Validate command + args strictly.</step>
+      <step>Capture stdout/stderr, return code, classify errors.</step>
+      <step>Write tests covering allowed vs denied commands.</step>
+    </implementation>
+    <security_checks>
+      <check>No shell=True usage.</check>
+      <check>Reject unknown args early.</check>
+      <check>Time out process if exceeding default limit.</check>
+    </security_checks>
+  </example>
+
+  <example name="full_interaction_transcript">
+    <description>Condensed transcript of ideal interaction for new server with streaming + background task.</description>
+    <transcript>
+      <turn role="user">"Create an MCP server that: 1) streams directory listings, 2) has a periodic cache warm task, 3) can cancel that task."</turn>
+      <turn role="mode">Clarifying questions: root path? listing limit? cache target?</turn>
+      <turn role="user">"Root ./data, limit 300, cache just counts file types."</turn>
+      <turn role="mode">Spec summary (Overview, Tools: stream_directory_listing, cancel_task; Resources: server_status; Safety: path restricted to ./data). Request confirmation.</turn>
+      <turn role="user">"Confirmed."</turn>
+      <turn role="mode">Proposed file tree + rationale. Awaiting approval.</turn>
+      <turn role="user">"Proceed."</turn>
+      <turn role="mode">Scaffold files via write_to_file (entrypoint, server builder, safety, tools).</turn>
+      <turn role="mode">Add streaming tool file and background task registry with diffs.</turn>
+      <turn role="mode">Provide run command and manual test examples.</turn>
+      <turn role="user">"Works. Add cancellation tool."</turn>
+      <turn role="mode">apply_diff server.py to register cancel_task + add cancellation code.</turn>
+    </transcript>
+  </example>
+
+  <example name="error_taxonomy_application">
+    <description>Demonstrate consistent error object usage across validation and runtime failures.</description>
+    <scenarios>
+      <scenario code="UserInput">
+        <trigger>Unknown parameter in system_info tool.</trigger>
+        <returned>{"ok": false, "code": "UserInput", "message": "Unknown params: {'foo'}", "hint": "Remove unsupported keys"}</returned>
+      </scenario>
+      <scenario code="Forbidden">
+        <trigger>Attempt to list path outside allowed root.</trigger>
+        <returned>{"ok": false, "code": "Forbidden", "message": "Path outside allowed root"}</returned>
+      </scenario>
+      <scenario code="Internal">
+        <trigger>Unexpected exception reading file stats.</trigger>
+        <returned>{"ok": false, "code": "Internal", "message": "Failed to collect system info"}</returned>
+      </scenario>
+    </scenarios>
+  </example>
+
+  <example name="extension_after_initial_delivery">
+    <description>Pattern for adding new analytical tool with minimal friction.</description>
+    <user_request><![CDATA[
+"Add a metrics tool reporting tool invocation counts since startup."
+]]></user_request>
+    <approach>
+      <step>Add metrics module storing counters incremented in server dispatcher.</step>
+      <step>Expose tool metrics_report returning counts.</step>
+      <step>Update resources server_status to include metrics length.</step>
+      <step>Document potential reset behavior on config reload.</step>
+    </approach>
+  </example>
+
+  <example name="testing_integration">
+    <description>Show minimal integration test using asyncio subprocess to call tool.</description>
+    <test_snippet><![CDATA[
+@pytest.mark.asyncio
+async def test_list_files_tool(tmp_path):
+    # Prepare data root
+    d = tmp_path / "data"
+    d.mkdir()
+    (d / "a.txt").write_text("x")
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable, "-m", "mcp_server",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE
+    )
+    request = {"jsonrpc":"2.0","id":"1","method":"tool_call",
+               "params":{"name":"list_files","arguments":{"path": str(d), "limit":10}}}
+    proc.stdin.write((json.dumps(request) + "\n").encode())
+    await proc.stdin.drain()
+    line = await proc.stdout.readline()
+    resp = json.loads(line)
+    assert resp["result"]["ok"] is True
+    proc.terminate()
+]]></test_snippet>
+  </example>
+
+  <example name="run_command_documentation">
+    <description>Illustrate final delivery section with run commands and extension tips.</description>
+    <delivery_block><![CDATA[
+Run Commands:
+  uvx python -m mcp_server            # start server
+  uvx python -m mcp_server --debug    # (if implemented) verbose logging
+
+Manual Tests:
+  1. system_info tool call
+  2. list_files with limit=5
+  3. stream_directory_listing with small directory
+  4. cancel_task on active background operation
+
+Extension Ideas:
+  - Add config reload tool
+  - Add metrics_report tool
+  - Introduce version resource
+]]></delivery_block>
+  </example>
+
+</examples>

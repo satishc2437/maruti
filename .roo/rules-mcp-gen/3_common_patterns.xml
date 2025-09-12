@@ -1,0 +1,462 @@
+<common_patterns>
+  <overview>Reusable XML-documented implementation patterns for Python MCP servers: tools, resources, streaming, background tasks, safety, errors, configuration, and testing.</overview>
+
+  <pattern name="basic_tool_structure">
+    <intent>Standard non-streaming tool with validation and pure logic separation.</intent>
+    <structure><![CDATA[
+# files: tools.py (adapters), logic/system_info.py (pure logic), validation/validators.py
+# Example: system_info tool
+# logic/system_info.py
+from typing import Dict, Any
+import platform, os, psutil  # psutil optional; guard if not present
+
+def collect_system_info(include_cpu: bool, include_memory: bool) -> Dict[str, Any]:
+    info = {"platform": platform.platform(), "python_version": platform.python_version()}
+    if include_cpu:
+        try:
+            info["cpu_count"] = os.cpu_count()
+        except Exception:
+            info["cpu_count"] = None
+    if include_memory:
+        try:
+            import psutil  # type: ignore
+            info["memory"] = {"total": psutil.virtual_memory().total}
+        except Exception:
+            info["memory"] = {"total": None}
+    return info
+
+# validation/validators.py
+from typing import TypedDict
+
+class SystemInfoParams(TypedDict):
+    include_cpu: bool
+    include_memory: bool
+
+def validate_system_info(raw: dict) -> SystemInfoParams:
+    allowed = {"include_cpu", "include_memory"}
+    unknown = set(raw.keys()) - allowed
+    if unknown:
+        raise ValueError(f"Unknown params: {unknown}")
+    return {
+        "include_cpu": bool(raw.get("include_cpu", True)),
+        "include_memory": bool(raw.get("include_memory", True)),
+    }
+
+# tools.py
+import asyncio, time
+from error_taxonomy import user_input_error, internal_error
+from validation.validators import validate_system_info
+from logic.system_info import collect_system_info
+
+TOOL_METADATA = {
+  "system_info": {
+     "description": "Return local platform and optional CPU/memory info",
+     "inputs": {
+        "include_cpu": {"type": "boolean", "default": True},
+        "include_memory": {"type": "boolean", "default": True}
+     }
+  }
+}
+
+async def tool_system_info(params: dict):
+    try:
+        validated = validate_system_info(params or {})
+    except ValueError as exc:
+        return user_input_error(str(exc), hint="Remove unknown parameters or fix types")
+    try:
+        # Could wrap heavy blocking sections in run_in_executor
+        data = await asyncio.to_thread(
+            collect_system_info,
+            validated["include_cpu"],
+            validated["include_memory"],
+        )
+        return {"ok": True, "data": data}
+    except Exception as exc:
+        return internal_error("Failed to collect system info", detail=str(exc))
+]]></structure>
+    <notes>
+      <note>Keep return schema consistent: success object vs error object.</note>
+      <note>Validation exceptions map to UserInput, unexpected to Internal.</note>
+    </notes>
+  </pattern>
+
+  <pattern name="resource_provider">
+    <intent>Expose read-only computed or cached data snapshot via MCP resource.</intent>
+    <structure><![CDATA[
+# resources.py
+from typing import Dict, Any
+from state import APP_STATE
+
+def resource_server_status() -> Dict[str, Any]:
+    return {
+      "uptime_seconds": APP_STATE.uptime(),
+      "tools_registered": sorted(APP_STATE.tools),
+      "background_tasks": APP_STATE.list_tasks_summary()
+    }
+
+RESOURCES = {
+  "server_status": {
+     "description": "Operational status & counts",
+     "func": resource_server_status
+  }
+}
+
+# server registration (excerpt)
+for name, meta in RESOURCES.items():
+    server.add_resource(name, meta["description"], meta["func"])
+]]></structure>
+    <best_practices>
+      <practice>Resources must not mutate state.</practice>
+      <practice>Return deterministic JSON-serializable data.</practice>
+    </best_practices>
+  </pattern>
+
+  <pattern name="streaming_tool">
+    <intent>Incrementally emit results for long-running operation (e.g., directory scan).</intent>
+    <structure><![CDATA[
+# streaming_tools.py
+import asyncio, os, json
+from pathlib import Path
+from safety import ensure_path_allowed
+from errors import user_input_error, internal_error, cancellation_error
+from typing import AsyncIterator
+
+async def stream_directory_listing(params: dict, send_event) -> dict:
+    root = params.get("path", ".")
+    limit = int(params.get("limit", 200))
+    try:
+        base = ensure_path_allowed(root)
+    except ValueError as e:
+        return user_input_error(str(e))
+    count = 0
+    sequence = 0
+    await send_event({"type": "start", "path": str(base), "limit": limit})
+    try:
+        for entry in os.scandir(base):
+            await asyncio.sleep(0)  # cooperative
+            if count >= limit:
+                break
+            payload = {
+              "name": entry.name,
+              "is_dir": entry.is_dir(),
+              "size": entry.stat().st_size if entry.is_file() else None
+            }
+            await send_event({"type": "chunk", "seq": sequence, "item": payload})
+            sequence += 1
+            count += 1
+            # cancellation flag check
+            if params.get("_cancel_flag") and params["_cancel_flag"]():
+                await send_event({"type": "cancelled"})
+                return cancellation_error("Directory listing cancelled by user")
+        await send_event({"type": "complete", "count": count})
+        return {"ok": True, "count": count}
+    except Exception as exc:
+        await send_event({"type": "error", "message": str(exc)})
+        return internal_error("Listing failed", detail=str(exc))
+]]></structure>
+    <rules>
+      <rule>Emit start, chunk(s), final completion or cancelled/error event.</rule>
+      <rule>Check cancellation between chunks.</rule>
+    </rules>
+  </pattern>
+
+  <pattern name="background_task_scheduler">
+    <intent>Manage periodic or continuous tasks with cancellation and status queries.</intent>
+    <structure><![CDATA[
+# background.py
+import asyncio, time
+from typing import Dict, Any, Callable
+
+class TaskRegistry:
+    def __init__(self):
+        self._tasks: Dict[str, asyncio.Task] = {}
+        self._meta: Dict[str, Dict[str, Any]] = {}
+
+    def add(self, name: str, coro_factory: Callable[[], 'asyncio.Future'], interval: float):
+        if name in self._tasks:
+            raise ValueError("Task exists")
+        async def runner():
+            while True:
+                start = time.time()
+                try:
+                    await coro_factory()
+                except asyncio.CancelledError:
+                    raise
+                except Exception as e:
+                    # log error
+                    pass
+                elapsed = time.time() - start
+                await asyncio.sleep(max(0, interval - elapsed))
+        task = asyncio.create_task(runner(), name=name)
+        self._tasks[name] = task
+        self._meta[name] = {"interval": interval, "started": time.time()}
+
+    def cancel(self, name: str):
+        t = self._tasks.get(name)
+        if t:
+            t.cancel()
+
+    def list(self):
+        return {n: {"interval": m["interval"], "alive": not t.done()} for n,(t,m) in
+                ((k, (self._tasks[k], self._meta[k])) for k in self._tasks)}
+
+TASKS = TaskRegistry()
+
+# Example registration
+def start_background_jobs():
+    TASKS.add("refresh_cache", refresh_cache_coro, interval=60.0)
+]]></structure>
+    <best_practices>
+      <practice>Use create_task not gather for repeating tasks.</practice>
+      <practice>Shield critical tasks only if necessary.</practice>
+    </best_practices>
+  </pattern>
+
+  <pattern name="safety_path_guard">
+    <intent>Prevent path traversal and out-of-root access.</intent>
+    <structure><![CDATA[
+# safety.py
+from pathlib import Path
+ALLOWED_ROOT = Path.cwd() / "data"
+
+def ensure_path_allowed(p: str | Path) -> Path:
+    candidate = (ALLOWED_ROOT / p).resolve() if not str(p).startswith(str(ALLOWED_ROOT)) else Path(p).resolve()
+    if not str(candidate).startswith(str(ALLOWED_ROOT.resolve())):
+        raise ValueError("Path outside allowed root")
+    return candidate
+]]></structure>
+    <notes>
+      <note>Use resolve() to collapse .. segments.</note>
+    </notes>
+  </pattern>
+
+  <pattern name="command_allowlist">
+    <intent>Controlled subprocess execution without arbitrary shell.</intent>
+    <structure><![CDATA[
+# subprocess_tools.py
+import asyncio, shlex
+from errors import forbidden_error, internal_error, user_input_error
+
+ALLOWED_COMMANDS = {"git": ["status", "rev-parse"], "python": ["--version"]}
+
+async def tool_run_command(params: dict):
+    cmd = params.get("command")
+    args = params.get("args", [])
+    if not cmd or cmd not in ALLOWED_COMMANDS:
+        return forbidden_error("Command not allowed")
+    for a in args:
+        if a not in ALLOWED_COMMANDS[cmd]:
+            return forbidden_error(f"Argument '{a}' not allowed for {cmd}")
+    try:
+        proc = await asyncio.create_subprocess_exec(cmd, *args,
+                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        out, err = await proc.communicate()
+        return {"ok": proc.returncode == 0, "stdout": out.decode(), "stderr": err.decode(), "code": proc.returncode}
+    except Exception as e:
+        return internal_error("Execution failed", detail=str(e))
+]]></structure>
+    <rules>
+      <rule>No shell=True.</rule>
+      <rule>Explicit allowlist of both command and permissible args.</rule>
+    </rules>
+  </pattern>
+
+  <pattern name="error_wrapping">
+    <intent>Unified error taxonomy mapping.</intent>
+    <structure><![CDATA[
+# errors.py
+def user_input_error(message: str, hint: str | None = None):
+    return {"ok": False, "code": "UserInput", "message": message, "hint": hint}
+
+def forbidden_error(message: str):
+    return {"ok": False, "code": "Forbidden", "message": message}
+
+def not_found_error(message: str):
+    return {"ok": False, "code": "NotFound", "message": message}
+
+def timeout_error(message: str):
+    return {"ok": False, "code": "Timeout", "message": message}
+
+def internal_error(message: str, detail: str | None = None):
+    return {"ok": False, "code": "Internal", "message": message, "detail": detail}
+
+def cancellation_error(message: str):
+    return {"ok": False, "code": "Cancelled", "message": message}
+]]></structure>
+    <best_practices>
+      <practice>Never expose raw stack traces to client; log internally.</practice>
+    </best_practices>
+  </pattern>
+
+  <pattern name="configuration_reload">
+    <intent>Hot reload config via tool with schema enforcement.</intent>
+    <structure><![CDATA[
+# config.py
+import json, threading
+from typing import Any, Dict
+
+_CONFIG: Dict[str, Any] = {}
+_LOCK = threading.RLock()
+CONFIG_PATH = "config.json"
+
+def load_config() -> Dict[str, Any]:
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+    # minimal schema check
+    if "version" not in raw:
+        raise ValueError("Missing version field")
+    return raw
+
+def init_config():
+    global _CONFIG
+    with _LOCK:
+        _CONFIG = load_config()
+
+def get_config():
+    with _LOCK:
+        return dict(_CONFIG)
+
+def reload_config():
+    with _LOCK:
+        _CONFIG.update(load_config())
+
+# tool
+from errors import internal_error, user_input_error
+def tool_reload_config(_params: dict):
+    try:
+        reload_config()
+        return {"ok": True, "config": get_config()}
+    except ValueError as e:
+        return user_input_error(str(e), hint="Check config schema")
+    except Exception as e:
+        return internal_error("Reload failed", detail=str(e))
+]]></structure>
+    <notes>
+      <note>Lock protects concurrent reads/writes.</note>
+    </notes>
+  </pattern>
+
+  <pattern name="test_harness_subprocess">
+    <intent>Integration test launching MCP server via uvx or python module.</intent>
+    <structure><![CDATA[
+# tests/test_server_integration.py
+import asyncio, json, sys
+import pytest, subprocess, time
+
+@pytest.mark.asyncio
+async def test_system_info_tool():
+    proc = await asyncio.create_subprocess_exec(
+        sys.executable, "-m", "mcp_server",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE
+    )
+    request = {
+      "jsonrpc":"2.0","id":"1","method":"tool_call",
+      "params":{"name":"system_info","arguments":{"include_cpu":False,"include_memory":False}}
+    }
+    proc.stdin.write((json.dumps(request) + "\n").encode())
+    await proc.stdin.drain()
+    line = await proc.stdout.readline()
+    data = json.loads(line)
+    assert data["id"] == "1"
+    assert data["result"]["ok"] is True
+    proc.terminate()
+]]></structure>
+    <best_practices>
+      <practice>Use dedicated test config with simplified limits.</practice>
+      <practice>Keep integration tests minimal due to spawn overhead.</practice>
+    </best_practices>
+  </pattern>
+
+  <pattern name="cancellation_tracking">
+    <intent>Track cancellable operations for responsiveness.</intent>
+    <structure><![CDATA[
+# cancellation.py
+import asyncio, uuid
+from typing import Dict
+
+ACTIVE: Dict[str, asyncio.Task] = {}
+
+def register(task: asyncio.Task) -> str:
+    token = uuid.uuid4().hex
+    ACTIVE[token] = task
+    task.add_done_callback(lambda t: ACTIVE.pop(token, None))
+    return token
+
+def cancel(token: str) -> bool:
+    t = ACTIVE.get(token)
+    if not t:
+        return False
+    t.cancel()
+    return True
+
+# usage
+async def start_long_operation():
+    task = asyncio.create_task(do_work())
+    token = register(task)
+    return token
+]]></structure>
+    <notes>
+      <note>Expose cancel tool that calls cancel(token).</note>
+    </notes>
+  </pattern>
+
+  <pattern name="progress_reporting">
+    <intent>Interleave progress events in non-streaming long tasks via periodic updates.</intent>
+    <structure><![CDATA[
+# progress.py
+import asyncio, math
+
+async def compute_with_progress(total: int, send_progress):
+    for i in range(total):
+        await asyncio.sleep(0)  # simulate work slice
+        if i % max(1, math.floor(total/10)) == 0:
+            await send_progress({"completed": i, "total": total})
+    return {"completed": total, "total": total}
+]]></structure>
+    <notes>
+      <note>send_progress distinct from streaming chunk events; used for status snapshots.</note>
+    </notes>
+  </pattern>
+
+  <pattern name="lazy_dependency_import">
+    <intent>Delay heavy imports until required to reduce startup latency.</intent>
+    <structure><![CDATA[
+# lazy_imports.py
+from types import ModuleType
+from importlib import import_module
+
+_CACHE: dict[str, ModuleType] = {}
+
+def require(name: str) -> ModuleType:
+    if name not in _CACHE:
+        _CACHE[name] = import_module(name)
+    return _CACHE[name]
+
+# usage inside tool
+async def tool_image_metadata(params):
+    PIL = require("PIL.Image")
+    ...
+]]></structure>
+    <caution>Document optional dependencies; fail gracefully with UserInput error if missing.</caution>
+  </pattern>
+
+  <pattern name="structured_logging">
+    <intent>Emit JSON logs for machine parsing.</intent>
+    <structure><![CDATA[
+# logging_setup.py
+import json, sys, time
+
+def log(event: str, **fields):
+    record = {"ts": time.time(), "event": event, **fields}
+    sys.stderr.write(json.dumps(record) + "\n")
+
+# usage
+log("tool_start", name="system_info", request_id=req_id)
+]]></structure>
+    <best_practices>
+      <practice>Never log full user secrets; redact before calling log.</practice>
+    </best_practices>
+  </pattern>
+
+</common_patterns>
