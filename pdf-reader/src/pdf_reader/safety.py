@@ -13,7 +13,11 @@ from typing import Union
 # Configuration constants
 MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100MB
 ALLOWED_EXTENSIONS = {'.pdf'}
-ALLOWED_ROOT = Path.cwd()  # Current working directory by default
+# Optional root restriction.
+# If ALLOW_ANY_PATH is True (default), absolute paths anywhere on the filesystem are permitted.
+# If set to False, paths must remain inside ALLOWED_ROOT.
+ALLOWED_ROOT = Path.cwd()  # Base root used only when ALLOW_ANY_PATH is False
+ALLOW_ANY_PATH = bool(int(os.environ.get("PDF_READER_ALLOW_ANY_PATH", "1")))
 
 
 class PDFSafetyError(Exception):
@@ -52,15 +56,17 @@ def validate_pdf_path(file_path: Union[str, Path]) -> Path:
         FileNotFoundError: If file doesn't exist
         FileSizeError: If file exceeds size limit
     """
-    # Convert to Path and resolve
-    path = Path(file_path).resolve()
-    
-    # Check if path is within allowed root
-    try:
-        path.relative_to(ALLOWED_ROOT.resolve())
-    except ValueError:
-        raise PathTraversalError(f"Path '{file_path}' is outside allowed root directory")
-    
+    # Convert to Path and resolve (expand user and env vars)
+    path = Path(os.path.expandvars(os.path.expanduser(str(file_path)))).resolve()
+
+    # Enforce root constraint only if unrestricted access disabled
+    if not ALLOW_ANY_PATH and ALLOWED_ROOT is not None:
+        try:
+            path.relative_to(ALLOWED_ROOT.resolve())
+        except ValueError:
+            raise PathTraversalError(
+                f"Path '{file_path}' is outside allowed root directory (root={ALLOWED_ROOT})"
+            )
     # Check file extension
     if path.suffix.lower() not in ALLOWED_EXTENSIONS:
         raise UnsupportedFileError(f"File type '{path.suffix}' not supported. Only PDF files allowed.")
