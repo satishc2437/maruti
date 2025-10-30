@@ -1,0 +1,47 @@
+{
+    "python.defaultInterpreterPath": "/app/.venv/bin/python",
+    "python.terminal.activateEnvironment": false,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.packageIndexDepths": [
+        {
+            "name": "sklearn",
+            "depth": 2
+        }
+    ],
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintPath": "/app/.venv/bin/pylint",
+    "python.formatting.provider": "black",
+    "python.formatting.blackPath": "/app/.venv/bin/black",
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestPath": "/app/.venv/bin/pytest",
+    "python.testing.pytestArgs": [
+        "."
+    ],
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "editor.rulers": [88, 100],
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "terminal.integrated.profiles.linux": {
+        "bash": {
+            "path": "bash",
+            "args": ["-l"]
+        }
+    },
+    "git.autofetch": true,
+    "git.enableSmartCommit": true,
+    "json.schemas": [
+        {
+            "fileMatch": ["pyproject.toml"],
+            "url": "https://json.schemastore.org/pyproject.json"
+        }
+    ],
+    "yaml.schemas": {
+        "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
+    }
+}

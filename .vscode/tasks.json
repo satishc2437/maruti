@@ -1,0 +1,186 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "UV: Sync Dependencies",
+            "type": "shell",
+            "command": "uv",
+            "args": [
+                "sync",
+                "--dev"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run: PDF Reader MCP Server",
+            "type": "shell",
+            "command": "uv",
+            "args": [
+                "run",
+                "pdf-reader"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run: XLSX Reader MCP Server",
+            "type": "shell",
+            "command": "uv",
+            "args": [
+                "run",
+                "xlsx-reader"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run: OneNote Reader MCP Server",
+            "type": "shell",
+            "command": "uv",
+            "args": [
+                "run",
+                "onenote-reader"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: All",
+            "type": "shell",
+            "command": "uv",
+            "args": [
+                "run",
+                "pytest",
+                "-v"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: PDF Reader",
+            "type": "shell",
+            "command": "uv",
+            "args": [
+                "run",
+                "pytest",
+                "pdf-reader/test_pdf.py",
+                "-v"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Test: XLSX Reader",
+            "type": "shell",
+            "command": "uv",
+            "args": [
+                "run",
+                "pytest",
+                "xlsx-reader/test_server.py",
+                "-v"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Format: Black",
+            "type": "shell",
+            "command": "uv",
+            "args": [
+                "run",
+                "black",
+                "."
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint: PyLint",
+            "type": "shell",
+            "command": "uv",
+            "args": [
+                "run",
+                "pylint",
+                "pdf-reader/src",
+                "xlsx-reader/src",
+                "onenote-reader/src"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Add Package",
+            "type": "shell",
+            "command": "uv",
+            "args": [
+                "add"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

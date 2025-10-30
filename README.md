@@ -12,6 +12,7 @@ Monorepo for a growing collection of focused Model Context Protocol (MCP) server
 | Server | Description | Status | Docs |
 |--------|-------------|--------|------|
 | pdf-reader | PDF text / metadata / tables / (streaming) extraction | Stable v1.0.0 | See `pdf-reader/README.md` and `pdf-reader/MCP_USAGE.md` |
+| xlsx-reader | Excel (.xlsx) workbook reading and comprehensive editing | Beta v1.0.0 | See `xlsx-reader/README.md` and `xlsx-reader/USAGE_EXAMPLES.md` |
 
 ## Getting Started (General Pattern)
 ```bash

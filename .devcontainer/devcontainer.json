@@ -1,0 +1,103 @@
+{
+    "name": "Maruti Development",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    // Configure tool-specific properties
+    "customizations": {
+        "vscode": {
+            // Set *default* container specific settings.json values on container create
+            "settings": {
+                "python.defaultInterpreterPath": "/app/.venv/bin/python",
+                "python.linting.enabled": true,
+                "python.linting.pylintEnabled": true,
+                "python.formatting.autopep8Path": "/app/.venv/bin/autopep8",
+                "python.formatting.blackPath": "/app/.venv/bin/black",
+                "python.formatting.provider": "black",
+                "python.linting.pylintPath": "/app/.venv/bin/pylint",
+                "python.terminal.activateEnvironment": false,
+                "python.analysis.typeCheckingMode": "basic",
+                "editor.formatOnSave": true,
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports": "explicit"
+                },
+                "files.trimTrailingWhitespace": true,
+                "files.insertFinalNewline": true,
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "git.autofetch": true
+            },
+            // Add the IDs of extensions you want installed when the container is created
+            "extensions": [
+                "ms-python.python",
+                "ms-python.debugpy",
+                "ms-python.black-formatter",
+                "ms-python.isort",
+                "ms-python.pylint",
+                "ms-toolsai.jupyter",
+                "ms-vscode.vscode-json",
+                "redhat.vscode-yaml",
+                "ms-vscode.docker",
+                "GitHub.copilot",
+                "GitHub.copilot-chat",
+                "eamodio.gitlens",
+                "ms-vscode.hexeditor",
+                "ms-vscode-remote.remote-containers"
+            ]
+        }
+    },
+    // Features to add to the dev container. More info: https://containers.dev/features.
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    // Use 'forwardPorts' to make a list of ports inside the container available locally
+    "forwardPorts": [
+        8000,
+        8080,
+        3000,
+        5000
+    ],
+    // Configure port attributes
+    "portsAttributes": {
+        "8000": {
+            "label": "MCP Server",
+            "onAutoForward": "notify"
+        },
+        "8080": {
+            "label": "Alt Web Server",
+            "onAutoForward": "silent"
+        },
+        "3000": {
+            "label": "Frontend Dev",
+            "onAutoForward": "silent"
+        },
+        "5000": {
+            "label": "Flask/FastAPI",
+            "onAutoForward": "silent"
+        }
+    },
+    // Use 'postCreateCommand' to run commands after the container is created
+    "postCreateCommand": "chmod +x .devcontainer/post-create.sh && .devcontainer/post-create.sh",
+    // Configure tool-specific properties
+    "mounts": [
+        "source=${localWorkspaceFolder}/.git,target=/app/.git,type=bind",
+        "source=maruti-uv-cache,target=/root/.cache/uv,type=volume"
+    ],
+    // Set environment variables
+    "containerEnv": {
+        "PYTHONPATH": "/app",
+        "UV_PROJECT_ENVIRONMENT": "/app/.venv",
+        "PYTHONUNBUFFERED": "1"
+    },
+    // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root
+    "remoteUser": "root",
+    // Keep container running after VS Code disconnects
+    "shutdownAction": "stopContainer",
+    // Configure workspace folder
+    "workspaceFolder": "/app",
+    // Lifecycle scripts
+    "onCreateCommand": "echo 'Creating Maruti dev container...'",
+    "updateContentCommand": "uv sync --dev",
+    "postStartCommand": "git config --global --add safe.directory /app"
+}

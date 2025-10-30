@@ -10,4 +10,5 @@ dependencies = []
 members = [
     "pdf-reader",
     "onenote-reader",
+    "xlsx-reader",
 ]
