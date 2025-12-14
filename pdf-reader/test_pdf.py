@@ -11,14 +11,14 @@ from pathlib import Path
 # Add the package to Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from pdf_reader.tools import tool_get_pdf_metadata, tool_list_pdf_pages, tool_extract_pdf_content
+from pdf_reader.tools import tool_extract_pdf_content, tool_get_pdf_metadata, tool_list_pdf_pages
 
 
 async def test_pdf_file(file_path: str):
     """Test all PDF tools with the specified file."""
     print(f"Testing PDF file: {file_path}")
     print("=" * 80)
-    
+
     # Test 1: Get metadata
     print("1. Testing get_pdf_metadata...")
     try:
@@ -26,9 +26,9 @@ async def test_pdf_file(file_path: str):
         print(f"Metadata result: {json.dumps(metadata_result, indent=2, default=str)}")
     except Exception as e:
         print(f"Metadata test failed: {e}")
-    
+
     print("\n" + "-" * 80 + "\n")
-    
+
     # Test 2: List first 3 pages preview
     print("2. Testing list_pdf_pages (first 3 pages)...")
     try:
@@ -41,9 +41,9 @@ async def test_pdf_file(file_path: str):
         print(f"Pages preview result: {json.dumps(pages_result, indent=2, default=str)}")
     except Exception as e:
         print(f"Pages test failed: {e}")
-    
+
     print("\n" + "-" * 80 + "\n")
-    
+
     # Test 3: Extract content (first page only to keep output manageable)
     print("3. Testing extract_pdf_content (first page only)...")
     try:
@@ -62,19 +62,19 @@ async def test_pdf_file(file_path: str):
 async def main():
     """Main test function."""
     # Test file path provided by user (now in pdf-reader directory)
-    test_file = r".\basic-text.pdf"
-    
+    test_file = "basic-text.pdf"
+
     print("PDF Reader MCP Server - Functionality Test")
     print("=" * 80)
-    
+
     # Check if file exists
     if not Path(test_file).exists():
         print(f"ERROR: Test file not found: {test_file}")
         print("Please ensure the file exists and the path is correct.")
         return
-    
+
     await test_pdf_file(test_file)
-    
+
     print("\n" + "=" * 80)
     print("Test completed!")
 

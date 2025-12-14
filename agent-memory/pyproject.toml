@@ -1,0 +1,31 @@
+[project]
+name = "agent-memory"
+version = "1.0.0"
+description = "Deterministic, schema-enforced, repo-local Memory Control Plane (MCP) for AI agents."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Agent Memory MCP", email = "noreply@example.com" }]
+
+[project.urls]
+Homepage = "https://example.com/agent-memory"
+
+[project.scripts]
+agent-memory = "agent_memory.__main__:main"
+
+[tool.uv]
+# uv-compatible project; lightweight, no external deps by default
+
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.agent_memory]
+schema_version_default = "v1"
+file_size_max_bytes = 1048576
+directory_listing_limit = 1000
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["agent_memory*"]

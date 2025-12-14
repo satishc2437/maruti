@@ -45,6 +45,16 @@ COPY . .
 # Install project in editable mode
 RUN uv sync --dev
 
+# Auto-discover and install all MCP servers in editable mode
+RUN for dir in */; do \
+        if [ -f "${dir}pyproject.toml" ] && [ "$dir" != ".devcontainer/" ]; then \
+            if grep -q "mcp\|Model Context Protocol" "${dir}pyproject.toml" 2>/dev/null; then \
+                echo "Installing MCP server: ${dir%/}" && \
+                cd "$dir" && uv pip install -e . && cd ..; \
+            fi; \
+        fi; \
+    done
+
 # Create a user for development (optional, but good practice)
 RUN useradd -m -s /bin/bash devuser && \
     chown -R devuser:devuser /app
