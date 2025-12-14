@@ -20,16 +20,29 @@ A deterministic **Memory Control Plane** (MCP) server for AI agents that provide
 
 ## Installation
 
+> 📖 **Quick Start**: See [`GITHUB_SETUP.md`](GITHUB_SETUP.md) for simple GitHub-based setup.
+
+### Option 1: From GitHub (Recommended)
+```bash
+# Install directly from GitHub using uvx
+uvx --from git+https://github.com/yourusername/agent-memory.git python -m agent_memory
+
+# Or install with uv for persistent use
+uv add git+https://github.com/yourusername/agent-memory.git
+```
+
+### Option 2: Local Development
+```bash
+# Clone and install locally
+git clone https://github.com/yourusername/agent-memory.git
+cd agent-memory
+uv sync
+```
+
 ### Prerequisites
 ```bash
 # Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install dependencies using uv
-uv sync
-
-# Or install core dependencies from PyPI
-uv add mcp
 ```
 
 ### Dependencies
@@ -41,6 +54,17 @@ uv add mcp
 ## Usage
 
 ### Running the Server
+
+**From GitHub (no local clone needed):**
+```bash
+# One-time execution from GitHub
+uvx --from git+https://github.com/yourusername/agent-memory.git python -m agent_memory
+
+# Test from GitHub
+uvx --from git+https://github.com/yourusername/agent-memory.git python -m agent_memory --test
+```
+
+**From Local Installation:**
 ```bash
 # Using uv (recommended)
 uv run python -m agent_memory
@@ -59,20 +83,36 @@ uv run python -m agent_memory --test
 
 ### Using with Claude Desktop
 
-1. **Install the server:**
+#### Option 1: Direct from GitHub (Recommended)
+
+Edit your Claude Desktop configuration file:
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Linux**: `~/.config/claude/claude_desktop_config.json`
+
+Add the Agent Memory server:
+```json
+{
+  "mcpServers": {
+    "agent-memory": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/yourusername/agent-memory.git", "python", "-m", "agent_memory"]
+    }
+  }
+}
+```
+
+#### Option 2: From Local Clone
+
+1. **Clone and install:**
    ```bash
+   git clone https://github.com/yourusername/agent-memory.git
    cd agent-memory
    uv sync
    ```
 
 2. **Add to Claude Desktop configuration:**
-
-   Edit your Claude Desktop configuration file:
-   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - **Linux**: `~/.config/claude/claude_desktop_config.json`
-
-   Add the Agent Memory server:
    ```json
    {
      "mcpServers": {
@@ -86,12 +126,16 @@ uv run python -m agent_memory --test
    }
    ```
 
-   **Important Notes:**
-   - Use absolute paths for `cwd`
-   - Ensure `uv sync` has been run in the project directory
-   - Test the server works: `uv run python -m agent_memory --test`
-
 3. **Restart Claude Desktop** to load the new server.
+
+**Testing:**
+```bash
+# Test GitHub version
+uvx --from git+https://github.com/yourusername/agent-memory.git python -m agent_memory --test
+
+# Test local version
+uv run python -m agent_memory --test
+```
 
 ### Using with Other MCP Clients
 
@@ -105,8 +149,15 @@ The server communicates via JSON-RPC over stdin/stdout as per MCP specification.
 
 ### Using with uvx (Alternative)
 
-For one-time usage without installation:
+**From GitHub (no clone needed):**
 ```bash
+# One-time usage from GitHub
+uvx --from git+https://github.com/yourusername/agent-memory.git python -m agent_memory
+```
+
+**From Local Clone:**
+```bash
+# One-time usage from local directory
 uvx --from /path/to/agent-memory python -m agent_memory
 ```
 
@@ -440,37 +491,55 @@ This tool does NOT:
 If you encounter "Unknown method" errors or connection issues:
 
 1. **Test the server directly:**
+
+   **From GitHub:**
+   ```bash
+   uvx --from git+https://github.com/yourusername/agent-memory.git python -m agent_memory --test
+   ```
+
+   **From Local:**
    ```bash
    cd agent-memory
    uv run python -m agent_memory --test
    ```
 
-2. **Alternative VSCode configuration:**
+2. **Alternative VSCode configurations:**
+
+   **GitHub-based (Recommended):**
    ```json
    {
      "mcpServers": {
        "agent-memory": {
          "type": "stdio",
-         "command": "python",
-         "args": ["-m", "agent_memory"],
-         "cwd": "/absolute/path/to/agent-memory",
-         "env": {
-           "UV_PROJECT_ENVIRONMENT": "/absolute/path/to/agent-memory/.venv"
-         }
+         "command": "uvx",
+         "args": ["--from", "git+https://github.com/yourusername/agent-memory.git", "python", "-m", "agent_memory"]
        }
      }
    }
    ```
 
-3. **Direct Python path (Windows example):**
+   **Local installation:**
    ```json
    {
      "mcpServers": {
        "agent-memory": {
          "type": "stdio",
-         "command": "C:/path/to/agent-memory/.venv/Scripts/python.exe",
-         "args": ["-m", "agent_memory"],
-         "cwd": "C:/path/to/agent-memory"
+         "command": "uv",
+         "args": ["run", "python", "-m", "agent_memory"],
+         "cwd": "/absolute/path/to/agent-memory"
+       }
+     }
+   }
+   ```
+
+   **Direct Python path (Windows example):**
+   ```json
+   {
+     "mcpServers": {
+       "agent-memory": {
+         "type": "stdio",
+         "command": "uvx",
+         "args": ["--from", "git+https://github.com/yourusername/agent-memory.git", "python", "-m", "agent_memory"]
        }
      }
    }

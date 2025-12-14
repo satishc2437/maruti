@@ -14,22 +14,38 @@ This typically indicates a protocol-level issue between the MCP client and serve
 #### Debugging Steps:
 
 1. **Test the server directly:**
+
+   **From GitHub:**
+   ```bash
+   uvx --from git+https://github.com/yourusername/agent-memory.git python -m agent_memory --test
+   ```
+
+   **From Local Clone:**
    ```bash
    cd agent-memory
    uv run python -m agent_memory --test
    ```
+
    This should show available tools and resources without errors.
 
 2. **Check MCP library version:**
    ```bash
-   uv run python -c "import mcp; print(mcp.__version__)"
+   uvx --from git+https://github.com/yourusername/agent-memory.git python -c "import mcp; print(mcp.__version__)"
    ```
 
 3. **Test manual server startup:**
+
+   **From GitHub:**
+   ```bash
+   uvx --from git+https://github.com/yourusername/agent-memory.git python -m agent_memory
+   ```
+
+   **From Local:**
    ```bash
    cd agent-memory
    uv run python -m agent_memory
    ```
+
    The server should start and show "Agent Memory MCP Server ready for connections"
 
 4. **Verify tools are registered:**
@@ -41,14 +57,42 @@ This typically indicates a protocol-level issue between the MCP client and serve
 
 #### Solutions:
 
-**Option 1: Update MCP library**
-```bash
-cd agent-memory
-uv add mcp --upgrade
+**Option 1: GitHub-based (Recommended)**
+```json
+{
+  "mcpServers": {
+    "agent-memory": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/yourusername/agent-memory.git", "python", "-m", "agent_memory"]
+    }
+  }
+}
 ```
 
-**Option 2: Alternative VSCode configuration**
-Try this configuration instead:
+**Option 2: Local installation**
+```bash
+git clone https://github.com/yourusername/agent-memory.git
+cd agent-memory
+uv sync
+uv run python -m agent_memory --test
+```
+
+Then use:
+```json
+{
+  "mcpServers": {
+    "agent-memory": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "python", "-m", "agent_memory"],
+      "cwd": "/absolute/path/to/agent-memory"
+    }
+  }
+}
+```
+
+**Option 3: Alternative local configuration**
 ```json
 {
   "mcpServers": {
@@ -56,34 +100,27 @@ Try this configuration instead:
       "type": "stdio",
       "command": "python",
       "args": ["-m", "agent_memory"],
-      "cwd": "Q:/repos/maruti/agent-memory",
+      "cwd": "/absolute/path/to/agent-memory",
       "env": {
-        "UV_PROJECT_ENVIRONMENT": "Q:/repos/maruti/agent-memory/.venv"
+        "UV_PROJECT_ENVIRONMENT": "/absolute/path/to/agent-memory/.venv"
       }
     }
   }
 }
 ```
 
-**Option 3: Use direct Python path**
+**Option 4: Direct Python path**
 ```json
 {
   "mcpServers": {
     "agent-memory": {
       "type": "stdio",
-      "command": "Q:/repos/maruti/agent-memory/.venv/Scripts/python.exe",
+      "command": "/absolute/path/to/agent-memory/.venv/Scripts/python.exe",
       "args": ["-m", "agent_memory"],
-      "cwd": "Q:/repos/maruti/agent-memory"
+      "cwd": "/absolute/path/to/agent-memory"
     }
   }
 }
-```
-
-**Option 4: Install dependencies first**
-```bash
-cd Q:/repos/maruti/agent-memory
-uv sync
-uv run python -m agent_memory --test
 ```
 
 ### Environment Setup Issues
@@ -105,6 +142,28 @@ uv run python -m agent_memory --test
 
 You can test the tool functionality directly:
 
+**From GitHub:**
+```bash
+uvx --from git+https://github.com/yourusername/agent-memory.git python -c "
+import tempfile
+import agent_memory.memory_ops as memory_ops
+
+# Test basic functionality
+with tempfile.TemporaryDirectory() as td:
+    manager = memory_ops.MemoryManager(td, 'test_agent')
+    print('Memory manager initialized successfully')
+
+    result = manager.start_session()
+    print(f'Session started: {result}')
+
+    result = manager.append_entry('Context', 'Test entry')
+    print('Entry appended successfully')
+
+print('✅ Core functionality works!')
+"
+```
+
+**From Local Clone:**
 ```bash
 cd agent-memory
 uv run python -c "
@@ -149,8 +208,22 @@ If none of these solutions work:
 
 ## Working Configuration Example
 
-Here's a confirmed working configuration:
+Here are confirmed working configurations:
 
+**GitHub-based (Recommended - no local setup needed):**
+```json
+{
+  "mcpServers": {
+    "agent-memory": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/yourusername/agent-memory.git", "python", "-m", "agent_memory"]
+    }
+  }
+}
+```
+
+**Local installation:**
 ```json
 {
   "mcpServers": {
@@ -164,7 +237,12 @@ Here's a confirmed working configuration:
 }
 ```
 
-Make sure:
-- The `cwd` path is absolute and correct
-- You've run `uv sync` in the directory
-- The test command works: `uv run python -m agent_memory --test`
+**Testing:**
+- GitHub version: `uvx --from git+https://github.com/yourusername/agent-memory.git python -m agent_memory --test`
+- Local version: `uv run python -m agent_memory --test` (after `uv sync`)
+
+**Benefits of GitHub-based approach:**
+- No local cloning required
+- Always uses latest version
+- No dependency management needed
+- Works from any machine with `uvx`
