@@ -1,27 +1,118 @@
-# Agent Memory MCP
+# Agent Memory MCP Server
 
-Deterministic, schema-enforced, repo-local memory tools for AI agents. Implements a Memory Control Plane that persists session logs and curated summaries inside the consuming Git repository.
+A deterministic **Memory Control Plane** (MCP) server for AI agents that provides a structured, versioned, repository-backed memory system. This server enables persistent agent context across sessions with deterministic writes/reads, schema enforcement, and reuse across multiple repositories and projects.
 
-- Package: [`agent_memory`](src/agent_memory/__init__.py)
-- Entry: [`__main__.py`](src/agent_memory/__main__.py:1)
-- Server: [`server.py`](src/agent_memory/server.py:1)
-- Tools: [`tools.py`](src/agent_memory/tools.py:1)
-- Safety: [`safety.py`](src/agent_memory/safety.py:1)
-- Schemas: [`schemas.py`](src/agent_memory/schemas.py:1)
-- Errors: [`errors.py`](src/agent_memory/errors.py:1)
-- Project: [`pyproject.toml`](pyproject.toml)
+## Features
 
-## Design Principles
+### Core Capabilities
+- **Persistent Agent Memory**: Maintain context across sessions in Git repositories
+- **Structured Storage**: Schema-enforced memory with predefined sections
+- **Session Management**: Create and manage daily session logs
+- **Summary Management**: Persistent agent summaries with selective updates
+- **Repository Integration**: Memory stored within `.github/agent-memory/` in each repository
 
-- Deterministic: no probabilistic behavior, no implicit writes.
-- Schema-enforced: invalid writes rejected.
-- Repo-local: memory lives under `.github/agent-memory/<agent>/`.
-- Agent-safe: read freely; write only via explicit tool calls.
-- Human-controlled: tool persists; humans curate durable knowledge.
+### Design Principles
+- **Deterministic**: No probabilistic behavior, no implicit writes, no auto-summarization
+- **Schema-Enforced**: All memory follows a declared structure, invalid writes rejected
+- **Repo-Local Storage**: Memory lives inside the consuming Git repository
+- **Agent-Safe**: Agents read memory freely, write only via explicit tool calls
+- **Human-Controlled**: Tool persists memory, humans decide what becomes durable
 
-## Repository Contract
+## Installation
 
-Required layout (auto-created if missing):
+### Prerequisites
+```bash
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies using uv
+uv sync
+
+# Or install core dependencies from PyPI
+uv add mcp
+```
+
+### Dependencies
+
+**Core Dependencies:**
+- `mcp>=1.0.0` - MCP server framework
+- No additional dependencies (uses Python standard library only)
+
+## Usage
+
+### Running the Server
+```bash
+# Using uv (recommended)
+uv run python -m agent_memory
+
+# Using uvx for one-time execution
+uvx --from . python -m agent_memory
+
+# Standard execution (if dependencies installed globally)
+python -m agent_memory
+
+# Test mode (development)
+uv run python -m agent_memory --test
+```
+
+## MCP Server Configuration
+
+### Using with Claude Desktop
+
+1. **Install the server:**
+   ```bash
+   cd agent-memory
+   uv sync
+   ```
+
+2. **Add to Claude Desktop configuration:**
+
+   Edit your Claude Desktop configuration file:
+   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Linux**: `~/.config/claude/claude_desktop_config.json`
+
+   Add the Agent Memory server:
+   ```json
+   {
+     "mcpServers": {
+       "agent-memory": {
+         "type": "stdio",
+         "command": "uv",
+         "args": ["run", "python", "-m", "agent_memory"],
+         "cwd": "/absolute/path/to/your/agent-memory"
+       }
+     }
+   }
+   ```
+
+   **Important Notes:**
+   - Use absolute paths for `cwd`
+   - Ensure `uv sync` has been run in the project directory
+   - Test the server works: `uv run python -m agent_memory --test`
+
+3. **Restart Claude Desktop** to load the new server.
+
+### Using with Other MCP Clients
+
+For other MCP-compatible clients, run the server in stdio mode:
+```bash
+cd agent-memory
+uv run python -m agent_memory
+```
+
+The server communicates via JSON-RPC over stdin/stdout as per MCP specification.
+
+### Using with uvx (Alternative)
+
+For one-time usage without installation:
+```bash
+uvx --from /path/to/agent-memory python -m agent_memory
+```
+
+## Repository Structure
+
+Each consuming repository will contain (or allow creation of):
 
 ```
 .github/
@@ -33,90 +124,379 @@ Required layout (auto-created if missing):
       └─ _schema.md
 ```
 
-## Safety
+## Memory Schema
 
-- Filesystem confined to provided repo_root.
-- Path traversal guarded; writes are deterministic; no deletes.
-- No network calls; no subprocess execution.
+### Default Schema (v1)
 
-## Run
+The schema defines the required structure of all session logs:
 
-- Recommended in VS Code terminal:
+```markdown
+# Agent Memory Schema v1
 
-```
-cd agent-memory && PYTHONPATH=./src python -m agent_memory
-```
+## Header
+- Agent Name
+- Date (YYYY-MM-DD)
+- Session ID
 
-This starts a JSON-RPC stdio server. Send one-line JSON requests via stdin.
+## Context
+- Project
+- Focus Area
+- Stage
 
-## Tools
+## Discussion Summary
+- Key topics discussed
 
-- start_session: create/open session log for date.
-- append_entry: append content under a valid section.
-- read_summary: read or initialize `_summary.md`.
-- update_summary: append/replace a section in `_summary.md`.
-- list_sessions: list `YYYY-MM-DD.md` newest → oldest.
+## Decisions
+- Explicit decisions made
 
-Valid sections (schema v1): Context, Discussion Summary, Decisions, Open Questions, Next Actions.
+## Open Questions
+- Unresolved issues or risks
 
-## Usage Examples
-
-Send requests via pipe using shell printf.
-
-- start_session
-
-```
-printf '{"jsonrpc":"2.0","id":"1","method":"tool_call","params":{"name":"start_session","arguments":{"agent_name":"aristotle","repo_root":"/app"}}}\n' | PYTHONPATH=./src python -m agent_memory
+## Next Actions
+- Follow-up actions
 ```
 
-- append_entry
+## Available Tools
 
-```
-printf '{"jsonrpc":"2.0","id":"2","method":"tool_call","params":{"name":"append_entry","arguments":{"agent_name":"aristotle","repo_root":"/app","section":"Decisions","content":"Adopt repo-local memory with schema v1."}}}\n' | PYTHONPATH=./src python -m agent_memory
-```
+### 1. `start_session`
+Creates or opens a session log for an agent on a given date.
 
-- read_summary
+**Parameters:**
+- `agent_name` (string, required): Logical agent identifier (e.g. `aristotle`)
+- `repo_root` (string, required): Absolute path to repository root
+- `date` (string, optional): Date in YYYY-MM-DD format (defaults to current date)
 
-```
-printf '{"jsonrpc":"2.0","id":"3","method":"tool_call","params":{"name":"read_summary","arguments":{"agent_name":"aristotle","repo_root":"/app"}}}\n' | PYTHONPATH=./src python -m agent_memory
-```
-
-- update_summary (append)
-
-```
-printf '{"jsonrpc":"2.0","id":"4","method":"tool_call","params":{"name":"update_summary","arguments":{"agent_name":"aristotle","repo_root":"/app","section":"Decisions","content":"Use agent-memory v1 as persistence layer.","mode":"append"}}}\n' | PYTHONPATH=./src python -m agent_memory
-```
-
-- update_summary (replace)
-
-```
-printf '{"jsonrpc":"2.0","id":"5","method":"tool_call","params":{"name":"update_summary","arguments":{"agent_name":"aristotle","repo_root":"/app","section":"Context","content":"Project=Memory MCP; Focus=Schema; Stage=Implementation","mode":"replace"}}}\n' | PYTHONPATH=./src python -m agent_memory
+**Example:**
+```json
+{
+  "agent_name": "aristotle",
+  "repo_root": "/path/to/project"
+}
 ```
 
-- list_sessions
+### 2. `append_entry`
+Appends structured content to a specific section of the session log.
 
+**Parameters:**
+- `agent_name` (string, required): Logical agent identifier
+- `repo_root` (string, required): Absolute path to repository root
+- `section` (string, required): Section name from schema
+- `content` (string, required): Content to append
+- `date` (string, optional): Date in YYYY-MM-DD format
+
+**Allowed sections:**
+- Context
+- Discussion Summary
+- Decisions
+- Open Questions
+- Next Actions
+
+**Example:**
+```json
+{
+  "agent_name": "aristotle",
+  "repo_root": "/path/to/project",
+  "section": "Decisions",
+  "content": "Decided to use React for the frontend framework"
+}
 ```
-printf '{"jsonrpc":"2.0","id":"6","method":"tool_call","params":{"name":"list_sessions","arguments":{"agent_name":"aristotle","repo_root":"/app","limit":10}}}\n' | PYTHONPATH=./src python -m agent_memory
+
+### 3. `read_summary`
+Reads the canonical persistent summary for an agent.
+
+**Parameters:**
+- `agent_name` (string, required): Logical agent identifier
+- `repo_root` (string, required): Absolute path to repository root
+
+**Example:**
+```json
+{
+  "agent_name": "aristotle",
+  "repo_root": "/path/to/project"
+}
 ```
 
-## Error Shape
+### 4. `update_summary`
+Updates a specific section of the agent summary.
 
-Errors are explicit and non-destructive:
+**Parameters:**
+- `agent_name` (string, required): Logical agent identifier
+- `repo_root` (string, required): Absolute path to repository root
+- `section` (string, required): Section name to update
+- `content` (string, required): Content to add or replace
+- `mode` (string, required): "append" or "replace"
 
+**Example:**
+```json
+{
+  "agent_name": "aristotle",
+  "repo_root": "/path/to/project",
+  "section": "Key Knowledge",
+  "content": "Frontend architecture: React with TypeScript",
+  "mode": "append"
+}
 ```
-{"ok": false, "error": "InvalidSection", "message": "Section 'Thoughts' is not defined in schema"}
+
+### 5. `list_sessions`
+Lists existing session logs for an agent.
+
+**Parameters:**
+- `agent_name` (string, required): Logical agent identifier
+- `repo_root` (string, required): Absolute path to repository root
+- `limit` (number, optional): Maximum number of sessions to return (1-100)
+
+**Example:**
+```json
+{
+  "agent_name": "aristotle",
+  "repo_root": "/path/to/project",
+  "limit": 10
+}
 ```
 
-Codes: UserInput, Forbidden, NotFound, Timeout, Internal, InvalidSection.
+## Available Resources
 
-## Versioning
+### `memory://schema-info`
+Information about the agent memory schema, allowed sections, and design principles.
 
-- Tool version: 1.0.0
-- Schema version: v1 (declared in [`_schema.md`](src/agent_memory/schemas.py:1) template).
-- Mismatches should emit warnings; backward compatibility preferred.
+### `memory://server-status`
+Current server status, configuration, capabilities, and safety features.
 
-## Notes
+### `memory://usage-examples`
+Example usage patterns and typical workflow for agent memory operations.
 
-- To run via uvx without PYTHONPATH, install the package locally:
-  - `cd agent-memory && uv pip install -e .`
-  - Then `uvx python -m agent_memory`.
+## Response Format
+
+### Success Response
+```json
+{
+  "ok": true,
+  "data": {
+    "session_file": "path/to/session.md",
+    "created": true
+  }
+}
+```
+
+### Error Response
+```json
+{
+  "ok": false,
+  "code": "UserInput|Forbidden|NotFound|Timeout|Internal",
+  "message": "Error description",
+  "hint": "Suggested resolution",
+  "correlation_id": "abc123"
+}
+```
+
+## Error Codes
+
+- **UserInput**: Invalid parameters, agent name, or section name
+- **Forbidden**: Security violation (path traversal, invalid repository)
+- **NotFound**: Repository, file, or section doesn't exist
+- **Timeout**: Operation exceeded time limit
+- **Internal**: Unexpected server error
+
+## Intended Usage Pattern
+
+1. **Agent session starts**
+2. **Agent reads summary** via `read_summary`
+3. **Human and agent reason together**
+4. **Important outcomes persisted** via `append_entry`
+5. **Durable knowledge curated** into summary via `update_summary`
+
+## Example Workflow
+
+```python
+# Start a new session
+{
+  "tool": "start_session",
+  "arguments": {
+    "agent_name": "aristotle",
+    "repo_root": "/path/to/project"
+  }
+}
+
+# Read existing summary
+{
+  "tool": "read_summary",
+  "arguments": {
+    "agent_name": "aristotle",
+    "repo_root": "/path/to/project"
+  }
+}
+
+# Log important decision
+{
+  "tool": "append_entry",
+  "arguments": {
+    "agent_name": "aristotle",
+    "repo_root": "/path/to/project",
+    "section": "Decisions",
+    "content": "Decided to use PostgreSQL for data persistence"
+  }
+}
+
+# Update persistent summary
+{
+  "tool": "update_summary",
+  "arguments": {
+    "agent_name": "aristotle",
+    "repo_root": "/path/to/project",
+    "section": "Technical Decisions",
+    "content": "Database: PostgreSQL chosen for ACID compliance",
+    "mode": "append"
+  }
+}
+```
+
+## Safety Features
+
+- **Path traversal protection**: Prevents access outside repository boundaries
+- **Repository boundary enforcement**: All operations confined to specified repo root
+- **Agent name validation**: Sanitizes agent names for filesystem safety
+- **Content sanitization**: Limits content length and removes dangerous characters
+- **Schema compliance checking**: Validates all writes against declared schema
+- **No delete operations**: By design, no data removal capabilities
+- **No network access**: Operates entirely on local filesystem
+- **No arbitrary execution**: No shell command execution capabilities
+
+## Limitations
+
+- Maximum content length: 10KB per entry
+- Agent names limited to 50 characters
+- No delete operations supported (by design)
+- No network access required or provided
+- Memory limited to repository scope
+- No automatic summarization or AI inference
+
+## Development
+
+### Project Structure
+```
+agent-memory/
+├── src/agent_memory/
+│   ├── __init__.py          # Package initialization
+│   ├── __main__.py          # Entry point
+│   ├── server.py           # MCP server setup
+│   ├── tools.py            # Tool implementations
+│   ├── memory_ops.py       # Core memory operations
+│   ├── safety.py           # Security validation
+│   └── errors.py           # Error handling
+├── pyproject.toml          # Project configuration and dependencies
+└── README.md              # Documentation
+```
+
+### Testing
+```bash
+# Run server tests
+uv run python -m agent_memory --test
+
+# Test specific functionality
+uv run python -c "
+import asyncio
+from agent_memory.tools import tool_start_session
+result = asyncio.run(tool_start_session({
+    'agent_name': 'test_agent',
+    'repo_root': '/tmp/test_repo'
+}))
+print(result)
+"
+```
+
+## Architectural Note
+
+This tool is intentionally **boring and deterministic**. That is a feature.
+
+It provides a stable foundation upon which:
+- Intelligent agents
+- Agent SaaS platforms
+- RAG systems
+- Enterprise workflows
+
+can be built safely and repeatedly.
+
+The tool deliberately separates:
+- **Reasoning** (LLMs / agents)
+- **Persistence** (this MCP tool)
+- **Judgment** (human-in-the-loop)
+
+## Explicit Non-Goals
+
+This tool does NOT:
+- Generate summaries automatically
+- Interpret or reason about content
+- Decide what is important
+- Store memory outside the repository
+- Replace human judgment
+- Provide AI-powered insights
+- Execute arbitrary code
+- Access network resources
+
+## Troubleshooting
+
+### VSCode MCP Issues
+
+If you encounter "Unknown method" errors or connection issues:
+
+1. **Test the server directly:**
+   ```bash
+   cd agent-memory
+   uv run python -m agent_memory --test
+   ```
+
+2. **Alternative VSCode configuration:**
+   ```json
+   {
+     "mcpServers": {
+       "agent-memory": {
+         "type": "stdio",
+         "command": "python",
+         "args": ["-m", "agent_memory"],
+         "cwd": "/absolute/path/to/agent-memory",
+         "env": {
+           "UV_PROJECT_ENVIRONMENT": "/absolute/path/to/agent-memory/.venv"
+         }
+       }
+     }
+   }
+   ```
+
+3. **Direct Python path (Windows example):**
+   ```json
+   {
+     "mcpServers": {
+       "agent-memory": {
+         "type": "stdio",
+         "command": "C:/path/to/agent-memory/.venv/Scripts/python.exe",
+         "args": ["-m", "agent_memory"],
+         "cwd": "C:/path/to/agent-memory"
+       }
+     }
+   }
+   ```
+
+See `TROUBLESHOOTING.md` for detailed debugging steps.
+
+### Core Functionality Test
+
+Test without VSCode:
+```bash
+cd agent-memory
+uv run python -c "
+import sys, tempfile
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / 'src'))
+import agent_memory.memory_ops as memory_ops
+
+with tempfile.TemporaryDirectory() as td:
+    manager = memory_ops.MemoryManager(td, 'test')
+    print('✅ Memory manager works!')
+    result = manager.start_session()
+    print(f'✅ Session: {result[\"created\"]}')
+"
+```
+
+## License
+
+This MCP server is provided as-is for educational and development purposes.

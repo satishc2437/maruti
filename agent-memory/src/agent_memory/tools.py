@@ -1,227 +1,454 @@
 """
-Agent Memory MCP Tools:
-- start_session
-- append_entry
-- read_summary
-- update_summary
-- list_sessions
+Memory tools for Agent Memory MCP server.
+
+Implements tool adapters that wrap memory operations with
+validation, error handling, and MCP-compatible interfaces.
 """
 
-from __future__ import annotations
+import asyncio
+import logging
+from typing import Any, Dict, List, Optional
 
-import datetime as dt
-import uuid
-from pathlib import Path
-from typing import Any, Dict, Tuple
+from .errors import (
+    cancellation_error,
+    forbidden_error,
+    internal_error,
+    not_found_error,
+    timeout_error,
+    user_input_error,
+)
+from .memory_ops import MemoryManager
+from .safety import (
+    InvalidRepositoryError,
+    MemorySafetyError,
+    PathTraversalError,
+    SchemaValidationError,
+)
 
-from .errors import (internal_error, invalid_section_error, not_found_error,
-                     user_input_error)
-from .safety import (check_file_size_bounds, ensure_agent_memory_layout,
-                     ensure_repo_root, limit_listing)
-from .schemas import (SessionHeader, append_under_section, ensure_schema_file,
-                      generate_session_header_md, validate_section)
+logger = logging.getLogger(__name__)
 
-TOOL_VERSION = "1.0.0"
+# Tool metadata for MCP registration
+TOOL_METADATA = {
+    "start_session": {
+        "description": "Creates or opens a session log for an agent on a given date",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agent_name": {
+                    "type": "string",
+                    "description": "Logical agent identifier (e.g. 'aristotle')"
+                },
+                "repo_root": {
+                    "type": "string",
+                    "description": "Absolute path to repository root"
+                },
+                "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "description": "Date in YYYY-MM-DD format (defaults to current date)"
+                }
+            },
+            "required": ["agent_name", "repo_root"]
+        }
+    },
+    "append_entry": {
+        "description": "Appends structured content to a specific section of the session log",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agent_name": {
+                    "type": "string",
+                    "description": "Logical agent identifier"
+                },
+                "repo_root": {
+                    "type": "string",
+                    "description": "Absolute path to repository root"
+                },
+                "date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "description": "Date in YYYY-MM-DD format (defaults to current date)"
+                },
+                "section": {
+                    "type": "string",
+                    "enum": ["Context", "Discussion Summary", "Decisions", "Open Questions", "Next Actions"],
+                    "description": "Section name from schema"
+                },
+                "content": {
+                    "type": "string",
+                    "description": "Content to append to the section"
+                }
+            },
+            "required": ["agent_name", "repo_root", "section", "content"]
+        }
+    },
+    "read_summary": {
+        "description": "Reads the canonical persistent summary for an agent",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agent_name": {
+                    "type": "string",
+                    "description": "Logical agent identifier"
+                },
+                "repo_root": {
+                    "type": "string",
+                    "description": "Absolute path to repository root"
+                }
+            },
+            "required": ["agent_name", "repo_root"]
+        }
+    },
+    "update_summary": {
+        "description": "Updates a specific section of the agent summary",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agent_name": {
+                    "type": "string",
+                    "description": "Logical agent identifier"
+                },
+                "repo_root": {
+                    "type": "string",
+                    "description": "Absolute path to repository root"
+                },
+                "section": {
+                    "type": "string",
+                    "description": "Section name to update"
+                },
+                "content": {
+                    "type": "string",
+                    "description": "Content to add or replace"
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": ["append", "replace"],
+                    "description": "Whether to append to or replace section content"
+                }
+            },
+            "required": ["agent_name", "repo_root", "section", "content", "mode"]
+        }
+    },
+    "list_sessions": {
+        "description": "Lists existing session logs for an agent",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agent_name": {
+                    "type": "string",
+                    "description": "Logical agent identifier"
+                },
+                "repo_root": {
+                    "type": "string",
+                    "description": "Absolute path to repository root"
+                },
+                "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Maximum number of sessions to return"
+                }
+            },
+            "required": ["agent_name", "repo_root"]
+        }
+    }
+}
 
-def _validate_agent_and_root(params: Dict[str, Any]) -> Tuple[str, Path]:
+
+def validate_start_session_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate parameters for start_session tool."""
     agent_name = params.get("agent_name")
+    if not agent_name or not isinstance(agent_name, str):
+        raise ValueError("Parameter 'agent_name' is required and must be a string")
+
     repo_root = params.get("repo_root")
-    if not isinstance(agent_name, str) or not agent_name.strip():
-        raise ValueError("Parameter 'agent_name' must be a non-empty string")
-    if not isinstance(repo_root, str) or not repo_root.strip():
-        raise ValueError("Parameter 'repo_root' must be a non-empty string")
-    root = ensure_repo_root(repo_root)
-    return agent_name.strip(), root
+    if not repo_root or not isinstance(repo_root, str):
+        raise ValueError("Parameter 'repo_root' is required and must be a string")
 
-def _date_from_params(params: Dict[str, Any]) -> str:
-    raw = params.get("date")
-    if raw is None:
-        return dt.date.today().isoformat()
-    if not isinstance(raw, str):
-        raise ValueError("Parameter 'date' must be string YYYY-MM-DD")
-    # Minimal validation
+    date = params.get("date")
+    if date is not None and not isinstance(date, str):
+        raise ValueError("Parameter 'date' must be a string in YYYY-MM-DD format")
+
+    return {
+        "agent_name": agent_name,
+        "repo_root": repo_root,
+        "date": date
+    }
+
+
+def validate_append_entry_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate parameters for append_entry tool."""
+    agent_name = params.get("agent_name")
+    if not agent_name or not isinstance(agent_name, str):
+        raise ValueError("Parameter 'agent_name' is required and must be a string")
+
+    repo_root = params.get("repo_root")
+    if not repo_root or not isinstance(repo_root, str):
+        raise ValueError("Parameter 'repo_root' is required and must be a string")
+
+    section = params.get("section")
+    if not section or not isinstance(section, str):
+        raise ValueError("Parameter 'section' is required and must be a string")
+
+    content = params.get("content")
+    if not content or not isinstance(content, str):
+        raise ValueError("Parameter 'content' is required and must be a string")
+
+    date = params.get("date")
+    if date is not None and not isinstance(date, str):
+        raise ValueError("Parameter 'date' must be a string in YYYY-MM-DD format")
+
+    return {
+        "agent_name": agent_name,
+        "repo_root": repo_root,
+        "section": section,
+        "content": content,
+        "date": date
+    }
+
+
+def validate_basic_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate basic agent_name and repo_root parameters."""
+    agent_name = params.get("agent_name")
+    if not agent_name or not isinstance(agent_name, str):
+        raise ValueError("Parameter 'agent_name' is required and must be a string")
+
+    repo_root = params.get("repo_root")
+    if not repo_root or not isinstance(repo_root, str):
+        raise ValueError("Parameter 'repo_root' is required and must be a string")
+
+    return {
+        "agent_name": agent_name,
+        "repo_root": repo_root
+    }
+
+
+def validate_update_summary_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate parameters for update_summary tool."""
+    basic = validate_basic_params(params)
+
+    section = params.get("section")
+    if not section or not isinstance(section, str):
+        raise ValueError("Parameter 'section' is required and must be a string")
+
+    content = params.get("content")
+    if not content or not isinstance(content, str):
+        raise ValueError("Parameter 'content' is required and must be a string")
+
+    mode = params.get("mode")
+    if not mode or mode not in ["append", "replace"]:
+        raise ValueError("Parameter 'mode' is required and must be 'append' or 'replace'")
+
+    return {
+        **basic,
+        "section": section,
+        "content": content,
+        "mode": mode
+    }
+
+
+def validate_list_sessions_params(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate parameters for list_sessions tool."""
+    basic = validate_basic_params(params)
+
+    limit = params.get("limit")
+    if limit is not None:
+        if not isinstance(limit, int) or limit < 1 or limit > 100:
+            raise ValueError("Parameter 'limit' must be an integer between 1 and 100")
+
+    return {
+        **basic,
+        "limit": limit
+    }
+
+
+async def run_with_timeout(coro, timeout_seconds: float = 10.0):
+    """Run coroutine with timeout protection."""
     try:
-        dt.date.fromisoformat(raw)
-    except Exception:
-        raise ValueError("Parameter 'date' must be YYYY-MM-DD")
-    return raw
+        return await asyncio.wait_for(coro, timeout=timeout_seconds)
+    except asyncio.TimeoutError:
+        return timeout_error(f"Operation exceeded {timeout_seconds:.1f}s limit")
 
-async def start_session(params: Dict[str, Any]) -> Dict[str, Any]:
+
+async def tool_start_session(params: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Create or open a session log file for agent_name on date.
-    Returns: {"ok": true, "session_file": "...", "created": true|false, "version": TOOL_VERSION}
-    """
-    try:
-        agent_name, root = _validate_agent_and_root(params)
-        date = _date_from_params(params)
-
-        agent_dir, logs_dir, summary = ensure_agent_memory_layout(root, agent_name)
-        schema_path = agent_dir / "_schema.md"
-        version, schema_created = ensure_schema_file(schema_path)
-
-        session_md = logs_dir / f"{date}.md"
-        created = False
-        if not session_md.exists():
-            # Create with deterministic header
-            header = SessionHeader(agent_name=agent_name, date=date, session_id=uuid.uuid4().hex[:8])
-            content = generate_session_header_md(header)
-            check_file_size_bounds(content)
-            session_md.write_text(content, encoding="utf-8")
-            created = True
-
-        return {"ok": True, "session_file": str(session_md), "created": created, "schema_version": version, "version": TOOL_VERSION}
-    except ValueError as ve:
-        return user_input_error(str(ve), hint="Check required params and formats")
-    except Exception as exc:
-        return internal_error("Failed to start session", detail=str(exc))
-
-async def append_entry(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Append structured content to a specific section in the session log.
-    Inputs: agent_name, repo_root, date?, section, content
-    """
-    try:
-        agent_name, root = _validate_agent_and_root(params)
-        date = _date_from_params(params)
-        section = params.get("section")
-        content = params.get("content")
-        if not isinstance(section, str) or not section.strip():
-            return user_input_error("Parameter 'section' must be a non-empty string")
-        if not isinstance(content, str) or not content.strip():
-            return user_input_error("Parameter 'content' must be a non-empty string")
-
-        agent_dir, logs_dir, _summary = ensure_agent_memory_layout(root, agent_name)
-        schema_path = agent_dir / "_schema.md"
-        schema_version, _ = ensure_schema_file(schema_path)
-
-        if not validate_section(section, schema_version):
-            return invalid_section_error(section)
-
-        session_md = logs_dir / f"{date}.md"
-        if not session_md.exists():
-            return not_found_error(f"Session file not found for date {date}", hint="Call start_session first")
-
-        # Read, update deterministically, write back
-        text = session_md.read_text(encoding="utf-8")
-        updated = append_under_section(text, section, content)
-        check_file_size_bounds(updated)
-        session_md.write_text(updated, encoding="utf-8")
-        return {"ok": True, "session_file": str(session_md), "section": section, "appended": True, "version": TOOL_VERSION}
-    except ValueError as ve:
-        return user_input_error(str(ve))
-    except FileNotFoundError:
-        return not_found_error("Session file missing unexpectedly")
-    except Exception as exc:
-        return internal_error("Failed to append entry", detail=str(exc))
-
-async def read_summary(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Read _summary.md for the agent, creating a template if missing/empty.
-    """
-    try:
-        agent_name, root = _validate_agent_and_root(params)
-        agent_dir, _logs_dir, summary = ensure_agent_memory_layout(root, agent_name)
-        schema_path = agent_dir / "_schema.md"
-        version, _ = ensure_schema_file(schema_path)
-
-        if summary.stat().st_size == 0:
-            # Initialize minimal template
-            tmpl = (
-                f"# Agent Summary ({agent_name})\n\n"
-                f"## Context\n\n"
-                f"## Discussion Summary\n\n"
-                f"## Decisions\n\n"
-                f"## Open Questions\n\n"
-                f"## Next Actions\n"
-            )
-            summary.write_text(tmpl, encoding="utf-8")
-
-        return {"ok": True, "summary": summary.read_text(encoding="utf-8"), "schema_version": version, "version": TOOL_VERSION}
-    except ValueError as ve:
-        return user_input_error(str(ve))
-    except Exception as exc:
-        return internal_error("Failed to read summary", detail=str(exc))
-
-async def update_summary(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Update a specific section of _summary.md.
-    Inputs: agent_name, repo_root, section, content, mode in {'append','replace'}
+    Tool: Create or open session log for an agent on a given date.
     """
     try:
-        agent_name, root = _validate_agent_and_root(params)
-        section = params.get("section")
-        content = params.get("content")
-        mode = params.get("mode")
-        if not isinstance(section, str) or not section.strip():
-            return user_input_error("Parameter 'section' must be a non-empty string")
-        if not isinstance(content, str):
-            return user_input_error("Parameter 'content' must be a string")
-        if mode not in ("append", "replace"):
-            return user_input_error("Parameter 'mode' must be one of: append, replace")
+        validated = validate_start_session_params(params or {})
+    except ValueError as e:
+        return user_input_error(str(e), hint="Check parameter types and values")
 
-        agent_dir, _logs_dir, summary = ensure_agent_memory_layout(root, agent_name)
-        schema_path = agent_dir / "_schema.md"
-        schema_version, _ = ensure_schema_file(schema_path)
-        if not validate_section(section, schema_version):
-            return invalid_section_error(section)
+    try:
+        async def start_operation():
+            manager = MemoryManager(validated["repo_root"], validated["agent_name"])
+            return manager.start_session(validated["date"])
 
-        text = summary.read_text(encoding="utf-8")
-        if mode == "append":
-            updated = append_under_section(text, section, content)
+        result = await run_with_timeout(start_operation(), timeout_seconds=10.0)
+
+        if isinstance(result, dict) and not result.get("ok", True):
+            return result  # Already an error response
+
+        return {"ok": True, "data": result}
+
+    except MemorySafetyError as e:
+        if isinstance(e, PathTraversalError):
+            return forbidden_error(str(e))
+        elif isinstance(e, InvalidRepositoryError):
+            return user_input_error(str(e), hint="Ensure repo_root points to a valid repository directory")
         else:
-            # Replace contents under the section heading
-            lines = text.splitlines()
-            # locate section offsets
-            from .schemas import find_section_offsets
-            offsets = find_section_offsets(text)
-            if section not in offsets:
-                return invalid_section_error(section)
-            start = offsets[section] + 1
-            end = len(lines)
-            for idx in range(start, len(lines)):
-                if lines[idx].startswith("## "):
-                    end = idx
-                    break
-            # ensure a blank line just after heading
-            if start < len(lines) and lines[start].strip() != "":
-                lines.insert(start, "")
-                end += 1
-            # splice replacement
-            insertion = content.strip()
-            block = insertion if insertion else ""
-            new_lines = lines[:start] + ([block] if block else []) + lines[end:]
-            updated = "\n".join(new_lines).rstrip() + "\n"
+            return forbidden_error(str(e))
+    except FileNotFoundError as e:
+        return not_found_error(str(e))
+    except Exception as e:
+        return internal_error("Failed to start session", detail=str(e))
 
-        check_file_size_bounds(updated)
-        summary.write_text(updated, encoding="utf-8")
-        return {"ok": True, "updated": True, "section": section, "mode": mode, "version": TOOL_VERSION}
-    except ValueError as ve:
-        return user_input_error(str(ve))
-    except Exception as exc:
-        return internal_error("Failed to update summary", detail=str(exc))
 
-async def list_sessions(params: Dict[str, Any]) -> Dict[str, Any]:
+async def tool_append_entry(params: Dict[str, Any]) -> Dict[str, Any]:
     """
-    List existing session logs (YYYY-MM-DD.md) newest -> oldest.
-    Optional: limit.
+    Tool: Append content to a specific section of the session log.
     """
     try:
-        agent_name, root = _validate_agent_and_root(params)
-        _agent_dir, logs_dir, _summary = ensure_agent_memory_layout(root, agent_name)
-        if not logs_dir.exists():
-            return {"ok": True, "sessions": []}
-        entries = [p.name for p in logs_dir.iterdir() if p.is_file() and p.name.endswith(".md")]
-        # Sort by date descending using filename
-        def parse_date(name: str) -> str:
-            # keep lexicographic sort (YYYY-MM-DD.md)
-            return name
-        sessions_sorted = sorted(entries, key=parse_date, reverse=True)
-        limit = params.get("limit")
-        if isinstance(limit, int) and limit > 0:
-            sessions_sorted = sessions_sorted[:limit]
-        sessions_sorted = limit_listing(sessions_sorted)
-        return {"ok": True, "sessions": sessions_sorted}
-    except ValueError as ve:
-        return user_input_error(str(ve))
-    except Exception as exc:
-        return internal_error("Failed to list sessions", detail=str(exc))
+        validated = validate_append_entry_params(params or {})
+    except ValueError as e:
+        return user_input_error(str(e), hint="Check parameter types and values")
+
+    try:
+        async def append_operation():
+            manager = MemoryManager(validated["repo_root"], validated["agent_name"])
+            return manager.append_entry(
+                validated["section"],
+                validated["content"],
+                validated["date"]
+            )
+
+        result = await run_with_timeout(append_operation(), timeout_seconds=10.0)
+
+        if isinstance(result, dict) and not result.get("ok", True):
+            return result  # Already an error response
+
+        return {"ok": True, "data": result}
+
+    except MemorySafetyError as e:
+        if isinstance(e, PathTraversalError):
+            return forbidden_error(str(e))
+        elif isinstance(e, InvalidRepositoryError):
+            return user_input_error(str(e), hint="Ensure repo_root points to a valid repository directory")
+        elif isinstance(e, SchemaValidationError):
+            return user_input_error(str(e), hint="Check that section name matches schema")
+        else:
+            return forbidden_error(str(e))
+    except ValueError as e:
+        return user_input_error(str(e), hint="Check section name and date format")
+    except FileNotFoundError as e:
+        return not_found_error(str(e))
+    except Exception as e:
+        return internal_error("Failed to append entry", detail=str(e))
+
+
+async def tool_read_summary(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Tool: Read the canonical persistent summary for an agent.
+    """
+    try:
+        validated = validate_basic_params(params or {})
+    except ValueError as e:
+        return user_input_error(str(e), hint="Provide valid agent_name and repo_root")
+
+    try:
+        async def read_operation():
+            manager = MemoryManager(validated["repo_root"], validated["agent_name"])
+            return manager.read_summary()
+
+        result = await run_with_timeout(read_operation(), timeout_seconds=10.0)
+
+        if isinstance(result, dict) and not result.get("ok", True):
+            return result  # Already an error response
+
+        return {"ok": True, "data": result}
+
+    except MemorySafetyError as e:
+        if isinstance(e, PathTraversalError):
+            return forbidden_error(str(e))
+        elif isinstance(e, InvalidRepositoryError):
+            return user_input_error(str(e), hint="Ensure repo_root points to a valid repository directory")
+        else:
+            return forbidden_error(str(e))
+    except FileNotFoundError as e:
+        return not_found_error(str(e))
+    except Exception as e:
+        return internal_error("Failed to read summary", detail=str(e))
+
+
+async def tool_update_summary(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Tool: Update a specific section of the agent summary.
+    """
+    try:
+        validated = validate_update_summary_params(params or {})
+    except ValueError as e:
+        return user_input_error(str(e), hint="Check parameter types and values")
+
+    try:
+        async def update_operation():
+            manager = MemoryManager(validated["repo_root"], validated["agent_name"])
+            return manager.update_summary(
+                validated["section"],
+                validated["content"],
+                validated["mode"]
+            )
+
+        result = await run_with_timeout(update_operation(), timeout_seconds=10.0)
+
+        if isinstance(result, dict) and not result.get("ok", True):
+            return result  # Already an error response
+
+        return {"ok": True, "data": result}
+
+    except MemorySafetyError as e:
+        if isinstance(e, PathTraversalError):
+            return forbidden_error(str(e))
+        elif isinstance(e, InvalidRepositoryError):
+            return user_input_error(str(e), hint="Ensure repo_root points to a valid repository directory")
+        else:
+            return forbidden_error(str(e))
+    except ValueError as e:
+        return user_input_error(str(e), hint="Check section name and mode parameter")
+    except FileNotFoundError as e:
+        return not_found_error(str(e))
+    except Exception as e:
+        return internal_error("Failed to update summary", detail=str(e))
+
+
+async def tool_list_sessions(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Tool: List existing session logs for an agent.
+    """
+    try:
+        validated = validate_list_sessions_params(params or {})
+    except ValueError as e:
+        return user_input_error(str(e), hint="Check parameter types and ranges")
+
+    try:
+        async def list_operation():
+            manager = MemoryManager(validated["repo_root"], validated["agent_name"])
+            return manager.list_sessions(validated["limit"])
+
+        result = await run_with_timeout(list_operation(), timeout_seconds=10.0)
+
+        if isinstance(result, dict) and not result.get("ok", True):
+            return result  # Already an error response
+
+        return {"ok": True, "data": result}
+
+    except MemorySafetyError as e:
+        if isinstance(e, PathTraversalError):
+            return forbidden_error(str(e))
+        elif isinstance(e, InvalidRepositoryError):
+            return user_input_error(str(e), hint="Ensure repo_root points to a valid repository directory")
+        else:
+            return forbidden_error(str(e))
+    except FileNotFoundError as e:
+        return not_found_error(str(e))
+    except Exception as e:
+        return internal_error("Failed to list sessions", detail=str(e))
