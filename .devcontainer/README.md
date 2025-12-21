@@ -8,7 +8,7 @@ A development container (dev container) is a running Docker container with a wel
 
 ## Features
 
-- **Consistent Environment**: Same Python 3.13 environment across all development machines
+- **Consistent Environment**: Same Python 3.14 environment across all development machines
 - **Pre-configured VS Code**: Extensions, settings, and tools ready to go
 - **Integrated Terminal**: Full bash environment with all project dependencies
 - **Port Forwarding**: Automatic forwarding of development ports (8000, 8080, 3000, 5000)
@@ -66,7 +66,7 @@ Once the dev container is running:
 # PDF Reader MCP Server
 uv run pdf-reader
 
-# XLSX Reader MCP Server  
+# XLSX Reader MCP Server
 uv run xlsx-reader
 
 # OneNote Reader MCP Server
@@ -76,8 +76,8 @@ uv run onenote-reader
 ### Running Tests
 ```bash
 # Run specific tests
-uv run pytest pdf-reader/test_pdf.py -v
-uv run pytest xlsx-reader/test_server.py -v
+uv run pytest mcp-tools/pdf-reader/test_pdf.py -v
+uv run pytest mcp-tools/xlsx-reader/test_server.py -v
 
 # Run all tests
 uv run pytest
@@ -199,7 +199,7 @@ RUN apt-get update && apt-get install -y \
 1. **Use .dockerignore**: Large files/directories are already excluded
 2. **Layer Caching**: Dependencies are installed before code copy for better caching
 3. **Volume Mounts**: UV cache is persisted across container rebuilds
-4. **Minimal Base Image**: Using `python:3.13-slim` for smaller image size
+4. **Minimal Base Image**: Using `python:3.14-slim` for smaller image size
 
 ## Comparison with Regular Docker
 

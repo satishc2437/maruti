@@ -14,20 +14,23 @@ fi
 SERVER_NAME="$1"
 echo "🚀 Adding new MCP server: $SERVER_NAME"
 
+TOOLS_DIR="mcp-tools"
+
 # Check if server directory already exists
-if [ -d "$SERVER_NAME" ]; then
-    echo "❌ Directory '$SERVER_NAME' already exists!"
+if [ -d "$TOOLS_DIR/$SERVER_NAME" ]; then
+    echo "❌ Directory '$TOOLS_DIR/$SERVER_NAME' already exists!"
     exit 1
 fi
 
 # Update workspace members in root pyproject.toml
 echo "📝 Updating workspace configuration..."
-if ! grep -q "\"$SERVER_NAME\"" pyproject.toml; then
+MEMBER_PATH="$TOOLS_DIR/$SERVER_NAME"
+if ! grep -q "\"$MEMBER_PATH\"" pyproject.toml; then
     # Add to workspace members
-    sed -i "/members = \[/,/\]/ s/\]/    \"$SERVER_NAME\",\n\]/" pyproject.toml
-    echo "  ✅ Added '$SERVER_NAME' to workspace members"
+    sed -i "/members = \[/,/\]/ s/\]/    \"$MEMBER_PATH\",\n\]/" pyproject.toml
+    echo "  ✅ Added '$MEMBER_PATH' to workspace members"
 else
-    echo "  ⚠️  '$SERVER_NAME' already in workspace members"
+    echo "  ⚠️  '$MEMBER_PATH' already in workspace members"
 fi
 
 # The MCP server directory and files should be created by MCP Generator mode
@@ -42,4 +45,4 @@ echo "3. The server will be automatically discovered and installed"
 echo ""
 echo "Available after rebuild:"
 echo "  uv run $SERVER_NAME                    # Start the server"
-echo "  cd $SERVER_NAME && python test_*.py   # Run tests (if created)"
+echo "  cd $TOOLS_DIR/$SERVER_NAME && python test_*.py   # Run tests (if created)"

@@ -14,6 +14,7 @@ build/
 dist/
 *.egg-info/
 .eggs/
+src/*.egg-info/
 
 # Test / coverage
 .pytest_cache/
@@ -38,3 +39,13 @@ agent-memory/.mypy_cache/
 agent-memory/.pytest_cache/
 agent-memory/__pycache__/
 agent-memory/src/agent_memory/__pycache__/
+
+# OS / editor / temp (universal)
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+
+# Common Python tooling caches
+.mypy_cache/
+.ruff_cache/

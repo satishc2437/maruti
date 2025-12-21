@@ -17,13 +17,15 @@ uv sync --dev
 # Auto-discover and install all MCP servers in editable mode
 echo "🔧 Auto-discovering and installing MCP servers..."
 mcp_count=0
-for dir in */; do
+for dir in mcp-tools/*/; do
     # Check if directory contains a pyproject.toml with MCP-related content
-    if [ -f "${dir}pyproject.toml" ] && [ "$dir" != ".devcontainer/" ]; then
+    if [ -f "${dir}pyproject.toml" ]; then
         if grep -q "mcp\|Model Context Protocol" "${dir}pyproject.toml" 2>/dev/null; then
-            echo "  📦 Installing MCP server: ${dir%/}"
-            cd "$dir" && uv pip install -e . && cd ..
-            echo "  ✅ ${dir%/} installed successfully"
+            tool_name="${dir#mcp-tools/}"
+            tool_name="${tool_name%/}"
+            echo "  📦 Installing MCP server: ${tool_name}"
+            cd "$dir" && uv pip install -e . && cd - >/dev/null
+            echo "  ✅ ${tool_name} installed successfully"
             ((mcp_count++))
         fi
     fi
@@ -64,14 +66,15 @@ alias pip='uv pip'
 alias pdf-server='uv run pdf-reader'
 alias xlsx-server='uv run xlsx-reader'
 alias onenote-server='uv run onenote-reader'
+alias agent-memory-server='uv run agent-memory'
 
 # Testing shortcuts
 alias test='uv run pytest'
-alias test-pdf='uv run pytest pdf-reader/test_pdf.py -v'
-alias test-xlsx='uv run pytest xlsx-reader/test_server.py -v'
+alias test-pdf='uv run pytest mcp-tools/pdf-reader/test_pdf.py -v'
+alias test-xlsx='uv run pytest mcp-tools/xlsx-reader/test_server.py -v'
 
 # Project info
-alias project-info='echo "Maruti MCP Servers Project" && echo "==========================" && echo "PDF Reader: uv run pdf-reader" && echo "XLSX Reader: uv run xlsx-reader" && echo "OneNote Reader: uv run onenote-reader" && echo "Run Tests: uv run pytest" && echo "Add Package: uv add <package>" && echo "Sync Dependencies: uv sync --dev"'
+alias project-info='echo "Maruti MCP Tools" && echo "===============" && echo "PDF Reader: uv run pdf-reader" && echo "XLSX Reader: uv run xlsx-reader" && echo "OneNote Reader: uv run onenote-reader" && echo "Agent Memory: uv run agent-memory" && echo "Run Tests: uv run pytest" && echo "Sync Dependencies: uv sync --dev"'
 
 EOF
 
@@ -107,10 +110,12 @@ echo "  3. No manual dependency installation needed!"
 echo "  4. Rebuild container if needed: Ctrl+Shift+P -> 'Rebuild Container'"
 echo ""
 echo "📋 Current MCP Servers:"
-for dir in */; do
-    if [ -f "${dir}pyproject.toml" ] && [ "$dir" != ".devcontainer/" ]; then
+for dir in mcp-tools/*/; do
+    if [ -f "${dir}pyproject.toml" ]; then
         if grep -q "mcp\|Model Context Protocol" "${dir}pyproject.toml" 2>/dev/null; then
-            echo "  ✅ ${dir%/}"
+            tool_name="${dir#mcp-tools/}"
+            tool_name="${tool_name%/}"
+            echo "  ✅ ${tool_name}"
         fi
     fi
 done

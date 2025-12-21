@@ -3,12 +3,20 @@ name = "maruti"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+]
 
 [tool.uv.workspace]
 members = [
-    "pdf-reader",
-    "onenote-reader",
-    "xlsx-reader",
+    "mcp-tools/agent-memory",
+    "mcp-tools/pdf-reader",
+    "mcp-tools/onenote-reader",
+    "mcp-tools/xlsx-reader",
 ]

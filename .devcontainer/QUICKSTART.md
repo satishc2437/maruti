@@ -4,7 +4,7 @@ Welcome to the Maruti project! This guide will get you up and running with the d
 
 ## 🎯 What You'll Get
 
-- **Instant Environment**: Python 3.13 + all dependencies pre-installed
+- **Instant Environment**: Python 3.14 + all dependencies pre-installed
 - **VS Code Integration**: Extensions, settings, and debugging ready
 - **MCP Servers**: PDF, XLSX, and OneNote readers ready to run
 - **Testing Setup**: Pytest configured and ready
@@ -43,7 +43,7 @@ Click **"Reopen in Container"**
 ### Step 3: Wait for Setup
 The first time will take a few minutes:
 - 📦 Building container image
-- 🐍 Installing Python dependencies  
+- 🐍 Installing Python dependencies
 - 🔧 Configuring VS Code extensions
 - ✨ Running setup scripts
 
@@ -63,7 +63,7 @@ You should see the project information and available commands.
 Use the convenient aliases:
 ```bash
 pdf-server      # Start PDF MCP server
-xlsx-server     # Start XLSX MCP server  
+xlsx-server     # Start XLSX MCP server
 onenote-server  # Start OneNote MCP server
 ```
 
