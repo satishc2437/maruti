@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Entry point for the Excel Reader MCP server.
+"""Entry point for the Excel Reader MCP server.
 
 Run with:
   uvx python -m xlsx_reader

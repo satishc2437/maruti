@@ -1,5 +1,4 @@
-"""
-MCP Server setup and registration for Agent Memory.
+"""MCP Server setup and registration for Agent Memory.
 
 Handles server initialization, tool registration, resource setup,
 and JSON-RPC communication over stdio.
@@ -58,8 +57,7 @@ async def list_tools() -> list[Tool]:
 
 @server.call_tool()
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
-    """
-    Handle tool execution requests and ensure MCP-compliant response format.
+    """Handle tool execution requests and ensure MCP-compliant response format.
 
     Always returns list[TextContent] so that the MCP client never receives
     raw dicts (which caused previous Pydantic validation errors complaining

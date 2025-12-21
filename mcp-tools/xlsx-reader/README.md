@@ -131,6 +131,21 @@ black src/ && isort src/
 mypy src/
 ```
 
+## Quality Gates
+
+Docstring lint must have zero warnings:
+
+```bash
+uv run ruff check --select D mcp-tools/xlsx-reader/src
+```
+
+Tests + coverage gate:
+
+```bash
+cd mcp-tools/xlsx-reader
+uv run pytest --cov --cov-fail-under=95
+```
+
 ## License
 
 MIT License

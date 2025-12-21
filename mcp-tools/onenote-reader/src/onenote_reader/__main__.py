@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-OneNote MCP Server Entry Point
+"""OneNote MCP Server Entry Point.
 
 Current phase: Scaffold (Graph + OAuth not implemented yet).
 
@@ -15,13 +14,15 @@ Planned:
 
 from __future__ import annotations
 
-import sys
 import argparse
 import asyncio
+import sys
+
 from .server import run_server, test_server
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
+    """Parse CLI arguments for the OneNote server entrypoint."""
     parser = argparse.ArgumentParser(prog="onenote_reader", add_help=True)
     parser.add_argument(
         "--test",
@@ -32,6 +33,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def main() -> None:
+    """CLI dispatcher for the OneNote MCP server."""
     args = parse_args(sys.argv[1:])
     try:
         if args.test:
@@ -40,7 +42,7 @@ def main() -> None:
             asyncio.run(run_server())
     except KeyboardInterrupt:
         print("\nServer stopped by user", file=sys.stderr)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"Server error: {e}", file=sys.stderr)
         sys.exit(1)
 

@@ -28,6 +28,7 @@ dev = [
     "pytest",
     "pytest-asyncio",
     "pytest-cov>=4.1.0",
+    "ruff>=0.6.0",
 ]
 
 [project.scripts]
@@ -67,3 +68,16 @@ omit = [
     "*/__main__.py",
     "*/server.py",
 ]
+
+[tool.ruff]
+exclude = [
+    "**/tests/**",
+    ".specify/**",
+    "**/__pycache__/**",
+]
+
+[tool.ruff.lint]
+select = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

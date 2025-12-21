@@ -1,5 +1,4 @@
-"""
-Safety validation and file guards for PDF Reader MCP Server.
+"""Safety validation and file guards for PDF Reader MCP Server.
 
 Implements file size limits, path validation, and security constraints
 to ensure safe PDF processing operations.
@@ -41,8 +40,7 @@ class UnsupportedFileError(PDFSafetyError):
 
 
 def validate_pdf_path(file_path: Union[str, Path]) -> Path:
-    """
-    Validate PDF file path for safety constraints.
+    """Validate PDF file path for safety constraints.
     
     Args:
         file_path: Path to PDF file (string or Path object)
@@ -90,8 +88,7 @@ def validate_pdf_path(file_path: Union[str, Path]) -> Path:
 
 
 def check_ocr_available() -> bool:
-    """
-    OCR functionality has been removed from this server.
+    """OCR functionality has been removed from this server.
     
     Returns:
         Always False as OCR is not supported
@@ -100,8 +97,7 @@ def check_ocr_available() -> bool:
 
 
 def sanitize_filename(filename: str) -> str:
-    """
-    Sanitize filename for safe usage in responses.
+    """Sanitize filename for safe usage in responses.
     
     Args:
         filename: Original filename
@@ -123,8 +119,7 @@ def sanitize_filename(filename: str) -> str:
 
 
 def get_safe_file_info(file_path: Path) -> dict:
-    """
-    Get safe file information without exposing sensitive paths.
+    """Get safe file information without exposing sensitive paths.
     
     Args:
         file_path: Validated Path object

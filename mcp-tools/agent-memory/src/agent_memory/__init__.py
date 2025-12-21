@@ -1,5 +1,4 @@
-"""
-Agent Memory MCP Server
+"""Agent Memory MCP Server.
 
 A deterministic Memory Control Plane for AI agents with structured,
 versioned, repository-backed memory system.

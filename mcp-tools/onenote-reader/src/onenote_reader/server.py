@@ -1,5 +1,4 @@
-"""
-OneNote MCP Server - server setup & JSON-RPC stdio integration.
+"""OneNote MCP Server - server setup & JSON-RPC stdio integration.
 
 Current phase: Scaffold (network + Microsoft Graph not implemented yet).
 Tools are registered and return placeholder / stub responses from tools.py.
@@ -24,14 +23,14 @@ from typing import Any, Dict, List
 # Attempt MCP imports (expect user to install `mcp` package)
 try:
     from mcp.server import Server
-    from mcp.types import Tool, Resource, TextContent
+    from mcp.types import Resource, TextContent, Tool
 except ImportError as e:
     raise ImportError(
         "MCP library not installed. Install with: pip install mcp"
     ) from e
 
-from .tools import TOOL_METADATA, TOOL_DISPATCH
-from .errors import internal_error, ensure_error
+from .errors import ensure_error, internal_error
+from .tools import TOOL_DISPATCH, TOOL_METADATA
 
 # -----------------------------------------------------------------------------
 # Logging
@@ -54,6 +53,7 @@ server = Server("onenote-reader")
 # -----------------------------------------------------------------------------
 @server.list_tools()
 async def list_tools() -> list[Tool]:
+    """List MCP tools exposed by this server."""
     tools: list[Tool] = []
     for name, meta in TOOL_METADATA.items():
         tools.append(
@@ -72,8 +72,7 @@ async def list_tools() -> list[Tool]:
 # -----------------------------------------------------------------------------
 @server.call_tool()
 async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
-    """
-    Dispatch tool call.
+    """Dispatch tool call.
 
     Always returns a list[TextContent] whose text is a JSON object containing:
       { ok: bool, ... }
@@ -102,7 +101,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         content = TextContent(type="text", text=json.dumps(result, indent=2, default=str))
         return [content]
 
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.exception("Unhandled exception in tool %s", name)
         err = internal_error("Tool execution failed", detail=str(exc))
         content = TextContent(type="text", text=json.dumps(err, indent=2))
@@ -114,6 +113,7 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
 # -----------------------------------------------------------------------------
 @server.list_resources()
 async def list_resources() -> list[Resource]:
+    """List MCP resources exposed by this server."""
     resources = [
         Resource(
             uri="onenote://server-status",
@@ -131,6 +131,7 @@ async def list_resources() -> list[Resource]:
 
 @server.read_resource()
 async def read_resource(uri: str) -> str:
+    """Return a JSON string for the requested resource URI."""
     if uri == "onenote://server-status":
         payload = {
             "server": "onenote-reader",
@@ -190,13 +191,11 @@ async def read_resource(uri: str) -> str:
 # Server Run Loop
 # -----------------------------------------------------------------------------
 async def run_server():
-    """
-    Start MCP server over stdio transport.
-    """
+    """Start the MCP server over stdio transport."""
     logger.info("Starting OneNote MCP server (scaffold)...")
     try:
         from mcp.server.stdio import stdio_server
-    except Exception as e:
+    except ImportError as e:
         logger.error("Failed importing stdio transport: %s", e)
         raise
 
@@ -213,6 +212,7 @@ async def run_server():
 # Lightweight dev test
 # -----------------------------------------------------------------------------
 async def test_server():
+    """Run a lightweight self-test (no client required)."""
     logger.info("Running basic self-test...")
     tools = await list_tools()
     logger.info("Tools: %s", [t.name for t in tools])

@@ -1,13 +1,14 @@
-"""
-Safety utilities for file operations and validation.
+"""Safety utilities for file operations and validation.
+
 Provides backup, file locking, and size validation functionality.
 """
 
+import logging
 import os
 import shutil
 from pathlib import Path
 from typing import Optional
-import logging
+
 from filelock import FileLock
 
 from .errors import FileAccessError, ValidationError
@@ -20,8 +21,7 @@ BACKUP_SUFFIX = ".backup"
 
 
 def validate_file_path(file_path: str) -> Path:
-    """
-    Validate that a file path exists and is accessible.
+    """Validate that a file path exists and is accessible.
 
     Args:
         file_path: Path to validate
@@ -51,8 +51,7 @@ def validate_file_path(file_path: str) -> Path:
 
 
 def validate_file_size(file_path: Path, max_size: Optional[int] = None) -> None:
-    """
-    Validate that file size is within acceptable limits.
+    """Validate that file size is within acceptable limits.
 
     Args:
         file_path: Path to check
@@ -74,8 +73,7 @@ def validate_file_size(file_path: Path, max_size: Optional[int] = None) -> None:
 
 
 def validate_excel_file(file_path: str) -> Path:
-    """
-    Validate that a file is a readable Excel file.
+    """Validate that a file is a readable Excel file.
 
     Args:
         file_path: Path to validate
@@ -103,8 +101,7 @@ def validate_excel_file(file_path: str) -> Path:
 
 
 def create_backup(file_path: Path) -> Path:
-    """
-    Create a backup copy of a file before modification.
+    """Create a backup copy of a file before modification.
 
     Args:
         file_path: Path to backup
@@ -126,8 +123,7 @@ def create_backup(file_path: Path) -> Path:
 
 
 def restore_backup(original_path: Path, backup_path: Optional[Path] = None) -> None:
-    """
-    Restore a file from its backup.
+    """Restore a file from its backup.
 
     Args:
         original_path: Path to restore to
@@ -150,8 +146,7 @@ def restore_backup(original_path: Path, backup_path: Optional[Path] = None) -> N
 
 
 def cleanup_backup(backup_path: Path) -> None:
-    """
-    Remove a backup file.
+    """Remove a backup file.
 
     Args:
         backup_path: Path to backup file to remove
@@ -165,11 +160,15 @@ def cleanup_backup(backup_path: Path) -> None:
 
 
 class FileOperationContext:
-    """
-    Context manager for safe file operations with backup and locking.
-    """
+    """Context manager for safe file operations with backup and locking."""
 
     def __init__(self, file_path: str, create_backup: bool = True):
+        """Initialize the context.
+
+        Args:
+            file_path: Path to an Excel file.
+            create_backup: Whether to create a backup before modifying the file.
+        """
         self.file_path = validate_excel_file(file_path)
         self.create_backup = create_backup
         self.backup_path: Optional[Path] = None
@@ -222,8 +221,7 @@ class FileOperationContext:
 
 
 def validate_sheet_name(sheet_name: str) -> str:
-    """
-    Validate worksheet name according to Excel rules.
+    """Validate worksheet name according to Excel rules.
 
     Args:
         sheet_name: Name to validate
@@ -253,8 +251,7 @@ def validate_sheet_name(sheet_name: str) -> str:
 
 
 def validate_cell_reference(cell_ref: str) -> str:
-    """
-    Validate Excel cell reference format.
+    """Validate Excel cell reference format.
 
     Args:
         cell_ref: Cell reference (e.g., "A1", "B2:D4")

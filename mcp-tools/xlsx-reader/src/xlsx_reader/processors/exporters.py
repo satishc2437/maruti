@@ -1,14 +1,14 @@
-"""
-Data export functionality for Excel workbooks.
+"""Data export functionality for Excel workbooks.
+
 Handles conversion to CSV, JSON, and other formats.
 """
 
 import csv
-import json
 import io
+import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-import logging
 
 import pandas as pd
 
@@ -22,6 +22,7 @@ class DataExporter:
     """Handles exporting Excel data to various formats."""
 
     def __init__(self, excel_processor: ExcelProcessor):
+        """Create an exporter bound to an Excel processor."""
         self.excel_processor = excel_processor
 
     def export_worksheet_to_csv(
@@ -31,8 +32,7 @@ class DataExporter:
         include_headers: bool = True,
         delimiter: str = ",",
     ) -> Dict[str, Any]:
-        """
-        Export worksheet data to CSV format.
+        """Export worksheet data to CSV format.
 
         Args:
             sheet_name: Name of worksheet to export
@@ -113,8 +113,7 @@ class DataExporter:
         include_formatting: bool = True,
         output_path: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """
-        Export entire workbook to JSON format.
+        """Export entire workbook to JSON format.
 
         Args:
             include_formulas: Include formula strings in output
@@ -220,8 +219,7 @@ class DataExporter:
     def export_sheet_to_pandas(
         self, sheet_name: str, include_headers: bool = True
     ) -> pd.DataFrame:
-        """
-        Export worksheet data to pandas DataFrame.
+        """Export worksheet data to pandas DataFrame.
 
         Args:
             sheet_name: Name of worksheet to export
@@ -259,8 +257,7 @@ class DataExporter:
             raise WorksheetError(f"Failed to export to pandas: {e}")
 
     def get_summary_statistics(self, sheet_name: str) -> Dict[str, Any]:
-        """
-        Generate summary statistics for worksheet data.
+        """Generate summary statistics for worksheet data.
 
         Args:
             sheet_name: Name of worksheet to analyze

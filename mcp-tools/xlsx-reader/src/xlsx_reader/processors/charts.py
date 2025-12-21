@@ -1,10 +1,10 @@
-"""
-Chart processing functionality for Excel workbooks.
+"""Chart processing functionality for Excel workbooks.
+
 Handles chart extraction, modification, and creation.
 """
 
-from typing import Any, Dict, List, Optional
 import logging
+from typing import Any, Dict, List, Optional
 
 from ..errors import ChartError, WorksheetError
 
@@ -15,11 +15,11 @@ class ChartProcessor:
     """Handles Excel chart operations."""
 
     def __init__(self, workbook):
+        """Create a chart processor for an openpyxl workbook."""
         self.workbook = workbook
 
     def extract_charts_from_sheet(self, sheet_name: str) -> List[Dict[str, Any]]:
-        """
-        Extract chart metadata from a worksheet.
+        """Extract chart metadata from a worksheet.
 
         Args:
             sheet_name: Name of worksheet to analyze
@@ -57,8 +57,7 @@ class ChartProcessor:
             raise ChartError(f"Failed to extract charts from sheet '{sheet_name}': {e}")
 
     def extract_all_charts(self) -> Dict[str, List[Dict[str, Any]]]:
-        """
-        Extract charts from all worksheets in the workbook.
+        """Extract charts from all worksheets in the workbook.
 
         Returns:
             Dictionary mapping sheet names to their chart lists
@@ -91,8 +90,7 @@ class ChartProcessor:
         title: Optional[str] = None,
         position: Optional[Dict[str, int]] = None,
     ) -> Dict[str, Any]:
-        """
-        Create a new chart in the specified worksheet.
+        """Create a new chart in the specified worksheet.
 
         Args:
             sheet_name: Name of worksheet to add chart to
@@ -109,12 +107,12 @@ class ChartProcessor:
         """
         try:
             from openpyxl.chart import (
+                AreaChart,
                 BarChart,
                 LineChart,
                 PieChart,
-                AreaChart,
-                ScatterChart,
                 Reference,
+                ScatterChart,
             )
 
             if sheet_name not in self.workbook.sheetnames:
@@ -170,8 +168,7 @@ class ChartProcessor:
     def modify_chart(
         self, sheet_name: str, chart_index: int, modifications: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Modify an existing chart in the worksheet.
+        """Modify an existing chart in the worksheet.
 
         Args:
             sheet_name: Name of worksheet containing the chart
@@ -235,8 +232,7 @@ class ChartProcessor:
             raise ChartError(f"Failed to modify chart: {e}")
 
     def delete_chart(self, sheet_name: str, chart_index: int) -> Dict[str, Any]:
-        """
-        Delete a chart from the worksheet.
+        """Delete a chart from the worksheet.
 
         Args:
             sheet_name: Name of worksheet containing the chart

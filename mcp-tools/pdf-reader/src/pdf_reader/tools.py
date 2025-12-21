@@ -1,5 +1,4 @@
-"""
-PDF extraction tools for MCP server.
+"""PDF extraction tools for MCP server.
 
 Implements tool adapters that wrap PDF processing logic with
 validation, error handling, and MCP-compatible interfaces.
@@ -221,9 +220,7 @@ async def run_with_timeout(
 
 
 async def tool_extract_pdf_content(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Tool: Extract comprehensive PDF content including text, images, tables, and metadata.
-    """
+    """Tool: Extract comprehensive PDF content including text, images, tables, and metadata."""
     try:
         validated = validate_extract_pdf_content_params(params or {})
     except ValueError as e:
@@ -262,9 +259,7 @@ async def tool_extract_pdf_content(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def tool_get_pdf_metadata(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Tool: Extract PDF metadata and document properties.
-    """
+    """Tool: Extract PDF metadata and document properties."""
     try:
         validated = validate_metadata_params(params or {})
     except ValueError as e:
@@ -297,9 +292,7 @@ async def tool_get_pdf_metadata(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def tool_list_pdf_pages(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Tool: Get preview of PDF pages with text snippets.
-    """
+    """Tool: Get preview of PDF pages with text snippets."""
     try:
         validated = validate_list_pages_params(params or {})
     except ValueError as e:
@@ -337,9 +330,7 @@ async def tool_list_pdf_pages(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def tool_stream_pdf_extraction(params: Dict[str, Any], send_event) -> Dict[str, Any]:
-    """
-    Streaming Tool: Extract PDF content with real-time progress updates.
-    """
+    """Streaming Tool: Extract PDF content with real-time progress updates."""
     try:
         validated = validate_extract_pdf_content_params(params or {})
     except ValueError as e:

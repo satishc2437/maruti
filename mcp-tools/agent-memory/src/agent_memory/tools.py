@@ -1,5 +1,4 @@
-"""
-Memory tools for Agent Memory MCP server.
+"""Memory tools for Agent Memory MCP server.
 
 Implements tool adapters that wrap memory operations with
 validation, error handling, and MCP-compatible interfaces.
@@ -275,9 +274,7 @@ async def run_with_timeout(
 
 
 async def tool_start_session(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Tool: Create or open session log for an agent on a given date.
-    """
+    """Tool: Create or open a session log for an agent on a given date."""
     try:
         validated = validate_start_session_params(params or {})
     except ValueError as e:
@@ -309,9 +306,7 @@ async def tool_start_session(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def tool_append_entry(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Tool: Append content to a specific section of the session log.
-    """
+    """Tool: Append content to a specific section of a session log."""
     try:
         validated = validate_append_entry_params(params or {})
     except ValueError as e:
@@ -351,9 +346,7 @@ async def tool_append_entry(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def tool_read_summary(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Tool: Read the canonical persistent summary for an agent.
-    """
+    """Tool: Read the canonical persistent summary for an agent."""
     try:
         validated = validate_basic_params(params or {})
     except ValueError as e:
@@ -385,9 +378,7 @@ async def tool_read_summary(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def tool_update_summary(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Tool: Update a specific section of the agent summary.
-    """
+    """Tool: Update a specific section of the agent summary."""
     try:
         validated = validate_update_summary_params(params or {})
     except ValueError as e:
@@ -425,9 +416,7 @@ async def tool_update_summary(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def tool_list_sessions(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Tool: List existing session logs for an agent.
-    """
+    """Tool: List existing session logs for an agent."""
     try:
         validated = validate_list_sessions_params(params or {})
     except ValueError as e:

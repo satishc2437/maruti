@@ -1,10 +1,10 @@
-"""
-Pivot table processing functionality for Excel workbooks.
+"""Pivot table processing functionality for Excel workbooks.
+
 Handles pivot table extraction, modification, and creation.
 """
 
-from typing import Any, Dict, List, Optional
 import logging
+from typing import Any, Dict, List, Optional
 
 from ..errors import PivotTableError, WorksheetError
 
@@ -15,11 +15,11 @@ class PivotTableProcessor:
     """Handles Excel pivot table operations."""
 
     def __init__(self, workbook):
+        """Create a pivot table processor for an openpyxl workbook."""
         self.workbook = workbook
 
     def extract_pivot_tables_from_sheet(self, sheet_name: str) -> List[Dict[str, Any]]:
-        """
-        Extract pivot table metadata from a worksheet.
+        """Extract pivot table metadata from a worksheet.
 
         Args:
             sheet_name: Name of worksheet to analyze
@@ -62,8 +62,7 @@ class PivotTableProcessor:
             )
 
     def extract_all_pivot_tables(self) -> Dict[str, List[Dict[str, Any]]]:
-        """
-        Extract pivot tables from all worksheets in the workbook.
+        """Extract pivot tables from all worksheets in the workbook.
 
         Returns:
             Dictionary mapping sheet names to their pivot table lists
@@ -98,8 +97,7 @@ class PivotTableProcessor:
         target_location: str,
         fields_config: Dict[str, List[str]],
     ) -> Dict[str, Any]:
-        """
-        Create a new pivot table.
+        """Create a new pivot table.
 
         Args:
             source_sheet: Name of worksheet containing source data
@@ -147,8 +145,7 @@ class PivotTableProcessor:
     def modify_pivot_table(
         self, sheet_name: str, pivot_index: int, modifications: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Modify an existing pivot table.
+        """Modify an existing pivot table.
 
         Args:
             sheet_name: Name of worksheet containing the pivot table
@@ -188,8 +185,7 @@ class PivotTableProcessor:
             raise PivotTableError(f"Failed to modify pivot table: {e}")
 
     def delete_pivot_table(self, sheet_name: str, pivot_index: int) -> Dict[str, Any]:
-        """
-        Delete a pivot table from the worksheet.
+        """Delete a pivot table from the worksheet.
 
         Args:
             sheet_name: Name of worksheet containing the pivot table
@@ -236,8 +232,7 @@ class PivotTableProcessor:
     def get_pivot_data_summary(
         self, sheet_name: str, pivot_index: int
     ) -> Dict[str, Any]:
-        """
-        Get summary information about pivot table data.
+        """Get summary information about pivot table data.
 
         Args:
             sheet_name: Name of worksheet containing the pivot table

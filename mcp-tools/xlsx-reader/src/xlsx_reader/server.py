@@ -1,5 +1,5 @@
-"""
-MCP server implementation for Excel Reader.
+"""MCP server implementation for Excel Reader.
+
 Provides comprehensive Excel workbook reading and editing capabilities.
 """
 
@@ -7,23 +7,23 @@ import asyncio
 import json
 import logging
 import sys
-from typing import Any, Dict, List, Optional
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # MCP imports
 try:
     from mcp.server import Server
-    from mcp.types import Resource, Tool, TextContent
+    from mcp.types import Resource, TextContent, Tool
 except ImportError:
     raise ImportError("MCP library not installed. Install with: pip install mcp")
 
 from .errors import (
-    user_input_error,
     forbidden_error,
-    not_found_error,
-    timeout_error,
     internal_error,
+    not_found_error,
     success_response,
+    timeout_error,
+    user_input_error,
 )
 from .processors.workbook import ExcelProcessor
 from .safety import FileOperationContext
@@ -316,8 +316,7 @@ async def handle_list_tools() -> List[Tool]:
 
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
-    """
-    Handle tool execution requests and ensure MCP-compliant response format.
+    """Handle tool execution requests and ensure MCP-compliant response format.
 
     Always returns list[TextContent] so that the MCP client never receives
     raw dicts (which caused previous Pydantic validation errors).

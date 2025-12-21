@@ -1,5 +1,4 @@
-"""
-Error handling and taxonomy for Agent Memory MCP Server.
+"""Error handling and taxonomy for Agent Memory MCP Server.
 
 Implements consistent error classification and formatting for
 all memory operations.

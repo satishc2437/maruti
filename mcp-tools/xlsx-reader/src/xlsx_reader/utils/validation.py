@@ -1,17 +1,16 @@
-"""
-Parameter validation utilities for MCP tools.
+"""Parameter validation utilities for MCP tools.
+
 Provides consistent validation for tool parameters.
 """
 
-from typing import Any, Dict, List, Optional, Union, Set
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Union
 
 from ..errors import ValidationError
 
 
 def validate_required_params(params: Dict[str, Any], required: Set[str]) -> None:
-    """
-    Validate that all required parameters are present.
+    """Validate that all required parameters are present.
 
     Args:
         params: Parameter dictionary
@@ -29,8 +28,7 @@ def validate_required_params(params: Dict[str, Any], required: Set[str]) -> None
 
 
 def validate_unknown_params(params: Dict[str, Any], allowed: Set[str]) -> None:
-    """
-    Validate that no unknown parameters are present.
+    """Validate that no unknown parameters are present.
 
     Args:
         params: Parameter dictionary
@@ -54,8 +52,7 @@ def validate_string_param(
     min_length: int = 0,
     max_length: Optional[int] = None,
 ) -> Optional[str]:
-    """
-    Validate a string parameter.
+    """Validate a string parameter.
 
     Args:
         value: Parameter value to validate
@@ -101,8 +98,7 @@ def validate_int_param(
     max_value: Optional[int] = None,
     default: Optional[int] = None,
 ) -> Optional[int]:
-    """
-    Validate an integer parameter.
+    """Validate an integer parameter.
 
     Args:
         value: Parameter value to validate
@@ -152,8 +148,7 @@ def validate_int_param(
 def validate_bool_param(
     value: Any, param_name: str, required: bool = True, default: Optional[bool] = None
 ) -> Optional[bool]:
-    """
-    Validate a boolean parameter.
+    """Validate a boolean parameter.
 
     Args:
         value: Parameter value to validate
@@ -197,8 +192,7 @@ def validate_list_param(
     min_length: int = 0,
     max_length: Optional[int] = None,
 ) -> Optional[List[Any]]:
-    """
-    Validate a list parameter.
+    """Validate a list parameter.
 
     Args:
         value: Parameter value to validate
@@ -252,8 +246,7 @@ def validate_choice_param(
     required: bool = True,
     default: Any = None,
 ) -> Any:
-    """
-    Validate a parameter that must be one of specific choices.
+    """Validate a parameter that must be one of specific choices.
 
     Args:
         value: Parameter value to validate
@@ -289,8 +282,7 @@ def validate_dict_param(
     required_keys: Optional[Set[str]] = None,
     allowed_keys: Optional[Set[str]] = None,
 ) -> Optional[Dict[str, Any]]:
-    """
-    Validate a dictionary parameter.
+    """Validate a dictionary parameter.
 
     Args:
         value: Parameter value to validate

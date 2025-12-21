@@ -53,6 +53,20 @@ Run a specific tool’s tests (example):
 uv run pytest mcp-tools/pdf-reader -v
 ```
 
+## Docstring Checks
+
+Run docstring lint (pydocstyle `D*` rules via `ruff`, Google convention) over the
+repo’s in-scope sources:
+
+```bash
+uv run ruff check --select D mcp-tools/*/src
+```
+
+Notes:
+- Scope is intentionally limited to tool source packages under `mcp-tools/*/src/**`.
+- Tests are excluded by configuration.
+- If a repo-root `main.py` exists, include it in the command.
+
 ## Using Tools via `uvx` (from GitHub)
 
 Each tool’s README provides a copy/paste snippet intended for MCP client

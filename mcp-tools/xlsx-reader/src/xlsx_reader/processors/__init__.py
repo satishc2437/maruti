@@ -1,11 +1,9 @@
-"""
-Core processing modules for Excel workbook operations.
-"""
+"""Core processing modules for Excel workbook operations."""
 
-from .workbook import ExcelProcessor
 from .charts import ChartProcessor
-from .pivots import PivotTableProcessor
 from .exporters import DataExporter
+from .pivots import PivotTableProcessor
+from .workbook import ExcelProcessor
 
 __all__ = [
     "ExcelProcessor",

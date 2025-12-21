@@ -1,5 +1,4 @@
-"""
-Error handling and taxonomy for PDF Reader MCP Server.
+"""Error handling and taxonomy for PDF Reader MCP Server.
 
 Implements consistent error classification and formatting for
 all PDF processing operations.

@@ -59,6 +59,21 @@ python -m agent_memory
 uv run python -m agent_memory --test
 ```
 
+## Quality Gates
+
+Docstring lint must have zero warnings:
+
+```bash
+uv run ruff check --select D mcp-tools/agent-memory/src
+```
+
+Tests + coverage gate:
+
+```bash
+cd mcp-tools/agent-memory
+uv run pytest --cov --cov-fail-under=95
+```
+
 ## MCP Server Configuration
 
 ### Using with Claude Desktop

@@ -52,6 +52,7 @@ description: "Task list template for feature implementation"
 - [ ] T001 Create project structure per implementation plan
 - [ ] T002 Initialize [language] project with [framework] dependencies
 - [ ] T003 [P] Configure linting and formatting tools (lint must pass with zero errors)
+- [ ] T003a [P] Configure docstring checks (docstring warnings must be zero)
 
 ---
 

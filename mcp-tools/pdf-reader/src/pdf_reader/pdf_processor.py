@@ -1,5 +1,4 @@
-"""
-Core PDF processing logic with streaming support.
+"""Core PDF processing logic with streaming support.
 
 Handles PDF content extraction including text, images, tables, metadata,
 and OCR functionality for scanned documents.
@@ -38,11 +37,11 @@ class PDFProcessor:
     """Core PDF processing functionality with streaming support."""
 
     def __init__(self):
+        """Initialize the processor."""
         self.ocr_available = False  # OCR functionality removed
 
     async def extract_metadata(self, file_path: str) -> Dict[str, Any]:
-        """
-        Extract PDF metadata without processing content.
+        """Extract PDF metadata without processing content.
 
         Args:
             file_path: Path to PDF file
@@ -89,8 +88,7 @@ class PDFProcessor:
     async def extract_page_text_preview(self, file_path: str, start_page: int = 1,
                                        end_page: Optional[int] = None,
                                        preview_length: int = 200) -> List[Dict[str, Any]]:
-        """
-        Extract text preview from specific pages.
+        """Extract text preview from specific pages.
 
         Args:
             file_path: Path to PDF file
@@ -141,8 +139,7 @@ class PDFProcessor:
     async def extract_full_content(self, file_path: str, pages: Optional[List[int]] = None,
                                   include_images: bool = True, include_tables: bool = True,
                                   use_ocr: bool = False) -> Dict[str, Any]:
-        """
-        Extract complete PDF content including text, images, and tables.
+        """Extract complete PDF content including text, images, and tables.
 
         Args:
             file_path: Path to PDF file
@@ -281,8 +278,7 @@ class PDFProcessor:
                                        include_images: bool = True,
                                        include_tables: bool = True,
                                        use_ocr: bool = False) -> Dict[str, Any]:
-        """
-        Stream PDF content extraction with progress updates.
+        """Stream PDF content extraction with progress updates.
 
         Args:
             file_path: Path to PDF file

@@ -1,5 +1,4 @@
-"""
-Graph client scaffold for OneNote MCP server.
+"""Graph client scaffold for OneNote MCP server.
 
 Current phase: NO real HTTP requests performed. All functions return
 placeholder structures so higher-level tool logic can be integrated
@@ -36,19 +35,13 @@ All return dict with 'ok': bool. Real network version will use httpx or aiohttp.
 from __future__ import annotations
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-from .errors import user_input_error, internal_error
-from .safety import (
-    validate_share_link,
-    truncate_plaintext,
-    validate_content_html,
-    check_rate_limit,
-)
 from .auth import ensure_token
-from .config import (
-    MAX_PLAINTEXT_EXTRACT_CHARS,
-)
+from .config import MAX_PLAINTEXT_EXTRACT_CHARS
+from .errors import internal_error, user_input_error
+from .safety import (check_rate_limit, truncate_plaintext,
+                     validate_content_html, validate_share_link)
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +71,9 @@ def _simulate_section_id(share_link: str) -> str:
 # ---------------------------------------------------------------------------
 
 def resolve_share_link(share_link: str) -> Dict[str, Any]:
-    """
-    Resolve a share link to internal IDs (placeholder).
-    In future: call /shares/{encoded}/... or OneNote specific resolution.
+    """Resolve a share link to internal IDs (placeholder).
+
+    In future: call /shares/{encoded}/... or OneNote-specific resolution.
     """
     try:
         validate_share_link(share_link)
@@ -109,9 +102,7 @@ def resolve_share_link(share_link: str) -> Dict[str, Any]:
 
 
 def read_page(share_link: str, fmt: str, include_images: bool, max_chars: Optional[int]) -> Dict[str, Any]:
-    """
-    Return placeholder page content for scaffold.
-    """
+    """Return placeholder page content for scaffold."""
     try:
         validate_share_link(share_link)
     except ValueError as e:
@@ -165,8 +156,8 @@ def read_page(share_link: str, fmt: str, include_images: bool, max_chars: Option
 
 
 def write_page(share_link: str, mode: str, html: str, title: Optional[str], position: str) -> Dict[str, Any]:
-    """
-    Write (replace/append/new_page) placeholder.
+    """Write (replace/append/new_page) placeholder.
+
     Future: perform Graph write endpoints.
     """
     try:
@@ -208,9 +199,7 @@ def write_page(share_link: str, mode: str, html: str, title: Optional[str], posi
 
 
 def list_page_children(share_link: str, filter_type: str) -> Dict[str, Any]:
-    """
-    Return placeholder element list.
-    """
+    """Return placeholder element list."""
     try:
         validate_share_link(share_link)
     except ValueError as e:
@@ -256,8 +245,7 @@ def list_page_children(share_link: str, filter_type: str) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def traverse_notebook(share_link: str, content_mode: str, max_chars_per_page: int) -> Dict[str, Any]:
-    """
-    Simulated traversal of full OneNote hierarchy (sections, section groups, pages).
+    """Simulated traversal of full OneNote hierarchy (sections, section groups, pages).
 
     Real implementation will:
       - Resolve notebook/section via share link

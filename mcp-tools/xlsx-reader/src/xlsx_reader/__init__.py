@@ -1,5 +1,4 @@
-"""
-Excel Reader MCP Server
+"""Excel Reader MCP Server.
 
 A comprehensive MCP server for reading and editing Microsoft Excel (.xlsx) workbooks.
 Provides tools for data extraction, manipulation, chart processing, and export capabilities.

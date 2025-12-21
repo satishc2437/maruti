@@ -1,5 +1,5 @@
-"""
-Core Excel workbook processing functionality.
+"""Core Excel workbook processing functionality.
+
 Handles reading, writing, and manipulating Excel workbooks using openpyxl.
 """
 
@@ -22,12 +22,12 @@ class ExcelProcessor:
     """Core Excel workbook processor with read/write capabilities."""
 
     def __init__(self):
+        """Initialize the processor with no workbook loaded."""
         self._workbook: Optional[Workbook] = None
         self._file_path: Optional[Path] = None
 
     def load_workbook(self, file_path: str, read_only: bool = False) -> Dict[str, Any]:
-        """
-        Load an Excel workbook from file.
+        """Load an Excel workbook from file.
 
         Args:
             file_path: Path to Excel file
@@ -58,8 +58,7 @@ class ExcelProcessor:
             raise WorkbookError(f"Failed to load workbook: {e}") from e
 
     def get_workbook_info(self) -> Dict[str, Any]:
-        """
-        Get metadata about the loaded workbook.
+        """Get metadata about the loaded workbook.
 
         Returns:
             Dictionary with workbook information
@@ -111,8 +110,7 @@ class ExcelProcessor:
         include_formulas: bool = False,
         cell_range: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """
-        Get data from a specific worksheet.
+        """Get data from a specific worksheet.
 
         Args:
             sheet_name: Name of sheet (active sheet if None)
@@ -214,8 +212,7 @@ class ExcelProcessor:
     def update_cell_value(
         self, sheet_name: str, cell_ref: str, value: Any, formula: Optional[str] = None
     ) -> Dict[str, Any]:
-        """
-        Update a single cell's value or formula.
+        """Update a single cell's value or formula.
 
         Args:
             sheet_name: Name of the worksheet
@@ -260,8 +257,7 @@ class ExcelProcessor:
     def update_cell_range(
         self, sheet_name: str, cell_range: str, values: List[List[Any]]
     ) -> Dict[str, Any]:
-        """
-        Update multiple cells in a range.
+        """Update multiple cells in a range.
 
         Args:
             sheet_name: Name of the worksheet
@@ -316,8 +312,7 @@ class ExcelProcessor:
     def add_worksheet(
         self, sheet_name: str, index: Optional[int] = None
     ) -> Dict[str, Any]:
-        """
-        Add a new worksheet to the workbook.
+        """Add a new worksheet to the workbook.
 
         Args:
             sheet_name: Name for the new worksheet
@@ -350,8 +345,7 @@ class ExcelProcessor:
             raise WorksheetError(f"Failed to add worksheet: {e}") from e
 
     def delete_worksheet(self, sheet_name: str) -> Dict[str, Any]:
-        """
-        Delete a worksheet from the workbook.
+        """Delete a worksheet from the workbook.
 
         Args:
             sheet_name: Name of sheet to delete
@@ -387,8 +381,7 @@ class ExcelProcessor:
             raise WorksheetError(f"Failed to delete worksheet: {e}") from e
 
     def save_workbook(self, file_path: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Save the workbook to file.
+        """Save the workbook to file.
 
         Args:
             file_path: Path to save to (original path if None)

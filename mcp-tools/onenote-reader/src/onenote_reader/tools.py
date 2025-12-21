@@ -1,5 +1,4 @@
-"""
-OneNote MCP Server - Tool metadata and implementations (scaffold + graph_client integration + traversal stub).
+"""OneNote MCP Server - Tool metadata and implementations (scaffold + graph_client integration + traversal stub).
 
 Phase:
   - read_onenote_page delegates to graph_client.read_page.
@@ -17,18 +16,13 @@ Remaining future work:
 
 from __future__ import annotations
 
-from typing import Any, Dict
 import logging
+from typing import Any, Dict
 
 from .errors import user_input_error
-from .graph_client import (
-    read_page,
-    write_page,
-    list_page_children,
-    resolve_share_link,
-    traverse_notebook,
-)
-from .safety import validate_share_link, validate_content_html
+from .graph_client import (list_page_children, read_page, resolve_share_link,
+                           traverse_notebook, write_page)
+from .safety import validate_content_html, validate_share_link
 
 logger = logging.getLogger(__name__)
 
@@ -164,6 +158,7 @@ def _require_share_link(params: Dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 async def tool_read_onenote_page(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Tool: Read a OneNote page (scaffold placeholder)."""
     try:
         share_link = _require_share_link(params or {})
     except ValueError as e:
@@ -176,6 +171,7 @@ async def tool_read_onenote_page(params: Dict[str, Any]) -> Dict[str, Any]:
     return read_page(share_link, fmt, include_images, max_chars)
 
 async def tool_write_onenote_page(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Tool: Write to a OneNote page (scaffold placeholder)."""
     try:
         share_link = _require_share_link(params or {})
     except ValueError as e:
@@ -198,6 +194,7 @@ async def tool_write_onenote_page(params: Dict[str, Any]) -> Dict[str, Any]:
     return write_page(share_link, mode, content_html, title, position)
 
 async def tool_list_onenote_page_children(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Tool: List children of a OneNote page (scaffold placeholder)."""
     try:
         share_link = _require_share_link(params or {})
     except ValueError as e:
@@ -208,9 +205,7 @@ async def tool_list_onenote_page_children(params: Dict[str, Any]) -> Dict[str, A
     return list_page_children(share_link, filter_type)
 
 async def tool_traverse_onenote_notebook(params: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Traverse entire notebook hierarchy (scaffold).
-    """
+    """Traverse entire notebook hierarchy (scaffold)."""
     try:
         share_link = _require_share_link(params or {})
     except ValueError as e:

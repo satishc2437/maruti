@@ -79,6 +79,21 @@ Self-test (lists tools/resources then exits):
 uvx --from . python -m onenote_reader --test
 ```
 
+## Quality Gates
+
+Docstring lint must have zero warnings:
+
+```bash
+uv run ruff check --select D mcp-tools/onenote-reader/src
+```
+
+Tests + coverage gate:
+
+```bash
+cd mcp-tools/onenote-reader
+uv run pytest --cov --cov-fail-under=95
+```
+
 ## MCP Integration
 
 Client must speak MCP over stdio. Example pseudo JSON-RPC call (tool listing):

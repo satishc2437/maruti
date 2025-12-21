@@ -1,5 +1,4 @@
-"""
-Authentication scaffold for OneNote MCP server (device code flow - placeholder).
+"""Authentication scaffold for OneNote MCP server (device code flow - placeholder).
 
 Current phase: No real network or Microsoft Graph token acquisition occurs.
 This module defines the intended interface and an in-memory token cache.
@@ -52,9 +51,7 @@ def _now() -> float:
 
 
 def get_cached_token() -> Optional[Dict[str, Any]]:
-    """
-    Return current token dict if present & not expired (scaffold just returns token).
-    """
+    """Return current token dict if present & not expired (scaffold placeholder)."""
     token = _TOKEN_STORE["token"]
     if token is None:
         return None
@@ -69,8 +66,7 @@ def clear_token() -> None:
 
 
 def ensure_token(scopes: Optional[List[str]] = None) -> Dict[str, Any]:
-    """
-    Ensure token is available (scaffold placeholder).
+    """Ensure token is available (scaffold placeholder).
 
     Returns:
         dict with placeholder token in scaffold phase.
@@ -101,9 +97,7 @@ def ensure_token(scopes: Optional[List[str]] = None) -> Dict[str, Any]:
 
 
 def auth_status() -> Dict[str, Any]:
-    """
-    Return lightweight auth status snapshot for resources/server-status.
-    """
+    """Return lightweight auth status snapshot for resources/server-status."""
     tk = get_cached_token()
     return {
         "has_token": tk is not None,

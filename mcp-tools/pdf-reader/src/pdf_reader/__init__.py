@@ -1,5 +1,4 @@
-"""
-PDF Reader MCP Server
+"""PDF Reader MCP Server.
 
 A Model Context Protocol server that provides comprehensive PDF reading capabilities
 including text extraction, image extraction, table detection, document structure

@@ -1,5 +1,4 @@
-"""
-Safety validation and file guards for Agent Memory MCP Server.
+"""Safety validation and file guards for Agent Memory MCP Server.
 
 Implements path validation and security constraints to ensure safe
 memory operations within repository boundaries.
@@ -31,8 +30,7 @@ class SchemaValidationError(MemorySafetyError):
 
 
 def validate_repository_root(repo_root: Union[str, Path]) -> Path:
-    """
-    Validate and normalize repository root path.
+    """Validate and normalize repository root path.
 
     Args:
         repo_root: Repository root path (string or Path object)
@@ -68,8 +66,7 @@ def validate_repository_root(repo_root: Union[str, Path]) -> Path:
 
 
 def validate_agent_name(agent_name: str) -> str:
-    """
-    Validate agent name for filesystem safety.
+    """Validate agent name for filesystem safety.
 
     Args:
         agent_name: Agent identifier
@@ -103,8 +100,7 @@ def validate_agent_name(agent_name: str) -> str:
 
 
 def validate_date_format(date_str: str) -> str:
-    """
-    Validate date string format (YYYY-MM-DD).
+    """Validate date string format (YYYY-MM-DD).
 
     Args:
         date_str: Date in YYYY-MM-DD format
@@ -135,8 +131,7 @@ def validate_date_format(date_str: str) -> str:
 
 
 def validate_section_name(section: str, allowed_sections: list) -> str:
-    """
-    Validate section name against schema.
+    """Validate section name against schema.
 
     Args:
         section: Section name to validate
@@ -158,8 +153,7 @@ def validate_section_name(section: str, allowed_sections: list) -> str:
 
 
 def ensure_memory_path(repo_root: Path, agent_name: str) -> Path:
-    """
-    Ensure agent memory directory exists and return path.
+    """Ensure agent memory directory exists and return path.
 
     Args:
         repo_root: Validated repository root
@@ -185,8 +179,7 @@ def ensure_memory_path(repo_root: Path, agent_name: str) -> Path:
 
 
 def get_safe_file_info(file_path: Path) -> dict:
-    """
-    Get safe file information without exposing sensitive paths.
+    """Get safe file information without exposing sensitive paths.
 
     Args:
         file_path: Validated Path object
@@ -210,8 +203,7 @@ def get_safe_file_info(file_path: Path) -> dict:
 
 
 def sanitize_content(content: str) -> str:
-    """
-    Sanitize content for safe storage.
+    """Sanitize content for safe storage.
 
     Args:
         content: Raw content string

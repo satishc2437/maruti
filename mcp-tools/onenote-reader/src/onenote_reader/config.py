@@ -1,5 +1,4 @@
-"""
-Configuration constants for OneNote MCP server (scaffold phase).
+"""Configuration constants for OneNote MCP server (scaffold phase).
 
 Centralizes limits, allowed hosts, HTML sanitation policy, and rate limit
 defaults so future implementation modules (auth, graph_client, safety,
@@ -11,7 +10,7 @@ No dynamic loading yet; future enhancement could add JSON/TOML reload.
 from __future__ import annotations
 
 import re
-from typing import Final, Pattern, List
+from typing import Final, List, Pattern
 
 VERSION: Final[str] = "0.0.1-scaffold"
 
@@ -82,9 +81,7 @@ HTTP_TIMEOUT_SECONDS: Final[float] = 15.0
 
 
 def is_valid_share_link(link: str) -> bool:
-    """
-    Return True if share link matches any accepted pattern.
-    """
+    """Return True if share link matches any accepted pattern."""
     if not isinstance(link, str) or len(link) > 2048:
         return False
     return any(p.search(link) for p in SHARE_LINK_PATTERNS)

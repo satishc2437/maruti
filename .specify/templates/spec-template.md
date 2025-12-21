@@ -8,7 +8,7 @@
 ## User Scenarios & Testing *(mandatory)*
 
 Per the repo constitution, delivered changes must also satisfy repo quality gates
-(e.g., linting must pass with zero errors, tests must pass).
+(e.g., linting must pass with zero errors, docstring checks must have zero warnings, tests must pass).
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.

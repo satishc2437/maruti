@@ -67,6 +67,21 @@ python -m pdf_reader
 uv run python -m pdf_reader --test
 ```
 
+## Quality Gates
+
+Docstring lint must have zero warnings:
+
+```bash
+uv run ruff check --select D mcp-tools/pdf-reader/src
+```
+
+Tests + coverage gate:
+
+```bash
+cd mcp-tools/pdf-reader
+uv run pytest --cov --cov-fail-under=95
+```
+
 ## MCP Server Configuration
 
 ### MCP Client Snippet (uvx from GitHub, no checkout)

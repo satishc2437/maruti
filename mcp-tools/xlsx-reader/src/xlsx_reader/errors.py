@@ -1,5 +1,5 @@
-"""
-Error taxonomy and handling utilities for the Excel Reader MCP server.
+"""Error taxonomy and handling utilities for the Excel Reader MCP server.
+
 Provides structured error responses with consistent classification.
 """
 
@@ -88,6 +88,13 @@ class ValidationError(ExcelProcessingError):
     """Raised when parameter validation fails."""
 
     def __init__(self, message: str, hint: Optional[str] = None, **kwargs):
+        """Initialize a validation error.
+
+        Args:
+            message: Human-readable error message.
+            hint: Optional hint for how to correct the error.
+            **kwargs: Additional data to attach to the error.
+        """
         super().__init__(message)
         self.message = message
         self.hint = hint

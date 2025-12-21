@@ -1,9 +1,9 @@
 <!--
 Sync Impact Report
-- Version change: 3.14.0  3.14.1
+- Version change: 3.14.1 -> 3.15.0
 - Modified principles/sections:
-	- Development Workflow & Quality Gates: clarify that linting must have zero errors
-	- Definition of Done (per tool): add explicit lint requirement
+	- Development Workflow & Quality Gates: add docstring check gate (zero docstring-specific warnings)
+	- Definition of Done (per tool): add explicit documentation/docstring requirement
 - Added sections: None
 - Removed sections: None
 - Templates requiring updates:
@@ -64,7 +64,7 @@ Tools MUST be installable and runnable via uv.
 Rationale: frictionless adoption and consistent execution.
 
 ### 6) Test-Driven Development + Coverage Gate (MUST)
-Development MUST follow TDD (red  green  refactor).
+Development MUST follow TDD (red -> green -> refactor).
 
 - Every tool MUST maintain >95% code coverage.
 - Tests MUST be meaningful (assert behavior and failure modes), not superficial.
@@ -130,6 +130,7 @@ Documentation requirements per tool:
 - Required gates per tool:
 	- formatting checks
 	- Python linting with zero errors
+	- docstring/documentation checks with zero docstring-specific warnings
 	- unit tests
 	- integration/contract tests when I/O boundaries exist
 	- coverage >95%
@@ -142,6 +143,7 @@ Definition of Done (per tool):
 - Tool runs in-container
 - README includes working `uvx` snippet
 - Lint passes with zero errors
+- Public APIs are documented (docstrings) and docstring checks pass with zero warnings
 - Tests are comprehensive and coverage gate passes
 - Performance constraints are documented and enforced where relevant
 
@@ -163,4 +165,4 @@ Compliance review expectations:
 - MUST principles are enforced as hard gates where practical.
 - SHOULD principles are enforced via reviews/checklists and periodic quality work.
 
-**Version**: 3.14.1 | **Ratified**: TODO(RATIFICATION_DATE): set when first ratified | **Last Amended**: 2025-12-21
+**Version**: 3.15.0 | **Ratified**: TODO(RATIFICATION_DATE): set when first ratified | **Last Amended**: 2025-12-21

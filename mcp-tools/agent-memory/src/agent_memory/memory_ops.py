@@ -1,5 +1,4 @@
-"""
-Core memory operations for Agent Memory MCP Server.
+"""Core memory operations for Agent Memory MCP Server.
 
 Implements the business logic for reading, writing, and managing
 agent memory files according to the schema specification.
@@ -81,8 +80,7 @@ class MemoryManager:
     """Manages agent memory operations with schema validation."""
 
     def __init__(self, repo_root: Union[str, Path], agent_name: str):
-        """
-        Initialize memory manager for a specific agent and repository.
+        """Initialize memory manager for a specific agent and repository.
 
         Args:
             repo_root: Repository root path
@@ -151,8 +149,7 @@ class MemoryManager:
 """
 
     def _find_section_in_content(self, content: str, section: str) -> tuple[int, int]:
-        """
-        Find section start and end positions in content.
+        """Find section start and end positions in content.
 
         Returns:
             Tuple of (start_pos, end_pos) or (-1, -1) if not found
@@ -180,8 +177,7 @@ class MemoryManager:
         return (start_idx, end_idx)
 
     def start_session(self, date: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Create or open session log for given date.
+        """Create or open session log for given date.
 
         Args:
             date: Date in YYYY-MM-DD format (defaults to today)
@@ -212,8 +208,7 @@ class MemoryManager:
         }
 
     def append_entry(self, section: str, content: str, date: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Append content to a specific section of the session log.
+        """Append content to a specific section of the session log.
 
         Args:
             section: Section name (must be in schema)
@@ -269,8 +264,7 @@ class MemoryManager:
         }
 
     def read_summary(self) -> Dict[str, Any]:
-        """
-        Read the agent's persistent summary.
+        """Read the agent's persistent summary.
 
         Returns:
             Dictionary with summary content
@@ -290,8 +284,7 @@ class MemoryManager:
             }
 
     def update_summary(self, section: str, content: str, mode: str = "append") -> Dict[str, Any]:
-        """
-        Update a specific section of the agent summary.
+        """Update a specific section of the agent summary.
 
         Args:
             section: Section name
@@ -344,8 +337,7 @@ class MemoryManager:
         }
 
     def list_sessions(self, limit: Optional[int] = None) -> Dict[str, Any]:
-        """
-        List existing session logs for the agent.
+        """List existing session logs for the agent.
 
         Args:
             limit: Maximum number of sessions to return

@@ -36,6 +36,7 @@
 At minimum for Python-only repos, include explicit gates for:
 
 - linting passes with zero errors
+- docstring checks pass with zero warnings
 - tests are present and meaningful
 - coverage requirements (if mandated by the repo)
 
