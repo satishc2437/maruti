@@ -43,6 +43,7 @@ uv run agent-memory
 Run all tests:
 
 ```bash
+uv sync --dev --all-packages
 uv run pytest
 ```
 
@@ -85,3 +86,23 @@ Potential repo-root removal candidates are listed in
 [REMOVAL_CANDIDATES.md](REMOVAL_CANDIDATES.md).
 
 Nothing is deleted as part of generating that report; deletions require explicit confirmation.
+
+## Note on `uv sync` in a Workspace
+
+This repo is a `uv` workspace (multiple independent Python projects under `mcp-tools/`).
+
+- If you want to run the *root* test suite (which imports all tools), use:
+
+  ```bash
+  uv sync --dev --all-packages
+  uv run pytest -q
+  ```
+
+- If you run `uv sync` at the repo root *without* `--all-packages`, `uv` may remove dependencies that belong to individual tools (because it is syncing the environment to just the root project). That can lead to import errors like missing `openpyxl`, `mcp`, `pypdf2/PyPDF2`, or tool packages such as `pdf_reader`.
+
+- For per-tool work, `cd mcp-tools/<tool>` and run:
+
+  ```bash
+  uv sync --dev
+  uv run pytest
+  ```
