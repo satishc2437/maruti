@@ -6,29 +6,27 @@ and OCR functionality for scanned documents.
 
 import asyncio
 import base64
-import io
-import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 # PDF processing imports
 try:
     import pdfplumber
     import pypdf
-    from PIL import Image
 except ImportError as e:
-    raise ImportError(f"Required PDF processing library not installed: {e}")
+    raise ImportError(f"Required PDF processing library not installed: {e}") from e
 
-# Optional pandas import for table processing
+# Optional pandas import for table processing (kept for branch coverage/tests).
 try:
-    import pandas as pd
+    import pandas as pd  # pylint: disable=unused-import
+
     PANDAS_AVAILABLE = True
 except ImportError:
     PANDAS_AVAILABLE = False
     pd = None
 
-from .safety import check_ocr_available, get_safe_file_info, validate_pdf_path
+from .safety import get_safe_file_info, validate_pdf_path
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +79,8 @@ class PDFProcessor:
 
                 return metadata
 
-        except Exception as e:
-            logger.error(f"Error extracting metadata from {file_path}: {e}")
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("Error extracting metadata from %s: %s", file_path, e)
             raise
 
     async def extract_page_text_preview(self, file_path: str, start_page: int = 1,
@@ -132,8 +130,8 @@ class PDFProcessor:
 
                 return pages_preview
 
-        except Exception as e:
-            logger.error(f"Error extracting page previews from {file_path}: {e}")
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("Error extracting page previews from %s: %s", file_path, e)
             raise
 
     async def extract_full_content(self, file_path: str, pages: Optional[List[int]] = None,
@@ -210,8 +208,12 @@ class PDFProcessor:
                                     result["tables"].append(table_data)
 
                             page_data["tables_count"] = len(page_tables)
-                        except Exception as e:
-                            logger.warning(f"Table extraction failed for page {page_num}: {e}")
+                        except Exception as e:  # pylint: disable=broad-exception-caught
+                            logger.warning(
+                                "Table extraction failed for page %s: %s",
+                                page_num,
+                                e,
+                            )
                             page_data["tables_count"] = 0
 
                     result["pages"].append(page_data)
@@ -222,8 +224,8 @@ class PDFProcessor:
 
             return result
 
-        except Exception as e:
-            logger.error(f"Error extracting content from {file_path}: {e}")
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("Error extracting content from %s: %s", file_path, e)
             raise
 
     async def _extract_images(self, file_path: Path, result: Dict[str, Any],
@@ -251,7 +253,10 @@ class PDFProcessor:
                                     if '/Filter' in obj:
                                         if obj['/Filter'] == '/DCTDecode':
                                             # JPEG image
-                                            img_data = obj._data
+                                            if hasattr(obj, "get_data"):
+                                                img_data = obj.get_data()
+                                            else:
+                                                img_data = obj._data  # pylint: disable=protected-access
                                             img_base64 = base64.b64encode(img_data).decode()
 
                                             image_info = {
@@ -266,11 +271,16 @@ class PDFProcessor:
 
                                             result["images"].append(image_info)
 
-                                except Exception as e:
-                                    logger.warning(f"Failed to extract image {obj_name} from page {page_num}: {e}")
+                                except Exception as e:  # pylint: disable=broad-exception-caught
+                                    logger.warning(
+                                        "Failed to extract image %s from page %s: %s",
+                                        obj_name,
+                                        page_num,
+                                        e,
+                                    )
 
-        except Exception as e:
-            logger.warning(f"Image extraction failed: {e}")
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.warning("Image extraction failed: %s", e)
 
     async def stream_content_extraction(self, file_path: str,
                                        send_event: callable,
@@ -353,7 +363,7 @@ class PDFProcessor:
                                     page_table_count += 1
 
                             page_data["tables_count"] = page_table_count
-                        except Exception:
+                        except Exception:  # pylint: disable=broad-exception-caught
                             page_data["tables_count"] = 0
 
                     processed_pages.append(page_data)
@@ -406,7 +416,7 @@ class PDFProcessor:
                 "metadata": metadata
             }
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             await send_event({
                 "type": "error",
                 "message": str(e)

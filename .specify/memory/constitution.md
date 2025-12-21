@@ -1,15 +1,14 @@
 <!--
 Sync Impact Report
-- Version change: 3.14.1 -> 3.15.0
+- Version change: 3.15.0 -> 3.16.0
 - Modified principles/sections:
-	- Development Workflow & Quality Gates: add docstring check gate (zero docstring-specific warnings)
-	- Definition of Done (per tool): add explicit documentation/docstring requirement
+	- Development Workflow & Quality Gates: require Pylint to have zero errors/warnings repo-wide
 - Added sections: None
 - Removed sections: None
 - Templates requiring updates:
-	- updated: .specify/templates/tasks-template.md
-	- updated: .specify/templates/plan-template.md
-	- updated: .specify/templates/spec-template.md
+	- ✅ updated: .specify/templates/tasks-template.md
+	- ✅ updated: .specify/templates/plan-template.md
+	- ✅ updated: .specify/templates/spec-template.md
 - Follow-up TODOs:
 	- TODO(RATIFICATION_DATE): set once first ratified
 -->
@@ -130,6 +129,7 @@ Documentation requirements per tool:
 - Required gates per tool:
 	- formatting checks
 	- Python linting with zero errors
+	- Pylint MUST report zero errors and zero warnings across in-scope Python code
 	- docstring/documentation checks with zero docstring-specific warnings
 	- unit tests
 	- integration/contract tests when I/O boundaries exist
@@ -143,9 +143,16 @@ Definition of Done (per tool):
 - Tool runs in-container
 - README includes working `uvx` snippet
 - Lint passes with zero errors
+- Pylint passes with zero errors and zero warnings
 - Public APIs are documented (docstrings) and docstring checks pass with zero warnings
 - Tests are comprehensive and coverage gate passes
 - Performance constraints are documented and enforced where relevant
+
+Canonical Pylint gate (repo-wide):
+
+- Config MUST be sourced from `.pylintrc` at repo root.
+- Run: `uv run pylint mcp-tools/*/src`.
+- The command MUST exit 0 (no E/W/F messages).
 
 ## Governance
 
@@ -165,4 +172,4 @@ Compliance review expectations:
 - MUST principles are enforced as hard gates where practical.
 - SHOULD principles are enforced via reviews/checklists and periodic quality work.
 
-**Version**: 3.15.0 | **Ratified**: TODO(RATIFICATION_DATE): set when first ratified | **Last Amended**: 2025-12-21
+**Version**: 3.16.0 | **Ratified**: TODO(RATIFICATION_DATE): set when first ratified | **Last Amended**: 2025-12-21

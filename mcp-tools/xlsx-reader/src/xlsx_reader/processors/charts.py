@@ -3,10 +3,15 @@
 Handles chart extraction, modification, and creation.
 """
 
+# openpyxl stores charts on worksheet internals (e.g., sheet._charts).
+# This module inspects those internals and catches broad exceptions to keep
+# extraction best-effort.
+# pylint: disable=protected-access,broad-exception-caught
+
 import logging
 from typing import Any, Dict, List, Optional
 
-from ..errors import ChartError, WorksheetError
+from ..errors import ChartError
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +59,9 @@ class ChartProcessor:
             return charts
 
         except Exception as e:
-            raise ChartError(f"Failed to extract charts from sheet '{sheet_name}': {e}")
+            raise ChartError(
+                f"Failed to extract charts from sheet '{sheet_name}': {e}"
+            ) from e
 
     def extract_all_charts(self) -> Dict[str, List[Dict[str, Any]]]:
         """Extract charts from all worksheets in the workbook.
@@ -74,13 +81,15 @@ class ChartProcessor:
                     if charts:
                         all_charts[sheet_name] = charts
                 except Exception as e:
-                    logger.warning(f"Failed to extract charts from '{sheet_name}': {e}")
+                    logger.warning(
+                        "Failed to extract charts from '%s': %s", sheet_name, e
+                    )
                     all_charts[sheet_name] = {"error": str(e)}
 
             return all_charts
 
         except Exception as e:
-            raise ChartError(f"Failed to extract charts from workbook: {e}")
+            raise ChartError(f"Failed to extract charts from workbook: {e}") from e
 
     def create_chart(
         self,
@@ -163,7 +172,7 @@ class ChartProcessor:
             }
 
         except Exception as e:
-            raise ChartError(f"Failed to create chart: {e}")
+            raise ChartError(f"Failed to create chart: {e}") from e
 
     def modify_chart(
         self, sheet_name: str, chart_index: int, modifications: Dict[str, Any]
@@ -216,10 +225,12 @@ class ChartProcessor:
                         chart.anchor = f"{self._col_to_letter(col)}{row}"
                         applied_modifications["position"] = value
                     else:
-                        logger.warning(f"Unknown chart property: {prop}")
+                        logger.warning("Unknown chart property: %s", prop)
 
                 except Exception as e:
-                    logger.warning(f"Failed to apply modification {prop}: {e}")
+                    logger.warning(
+                        "Failed to apply modification %s: %s", prop, e
+                    )
 
             return {
                 "sheet_name": sheet_name,
@@ -229,7 +240,7 @@ class ChartProcessor:
             }
 
         except Exception as e:
-            raise ChartError(f"Failed to modify chart: {e}")
+            raise ChartError(f"Failed to modify chart: {e}") from e
 
     def delete_chart(self, sheet_name: str, chart_index: int) -> Dict[str, Any]:
         """Delete a chart from the worksheet.
@@ -257,7 +268,7 @@ class ChartProcessor:
                 raise ChartError(f"Chart index {chart_index} out of range")
 
             # Remove chart
-            chart = sheet._charts.pop(chart_index)
+            _ = sheet._charts.pop(chart_index)
 
             return {
                 "sheet_name": sheet_name,
@@ -267,7 +278,7 @@ class ChartProcessor:
             }
 
         except Exception as e:
-            raise ChartError(f"Failed to delete chart: {e}")
+            raise ChartError(f"Failed to delete chart: {e}") from e
 
     # Helper methods
 
@@ -331,7 +342,7 @@ class ChartProcessor:
                     }
                     series_info.append(info)
         except Exception as e:
-            logger.warning(f"Failed to extract series info: {e}")
+            logger.warning("Failed to extract series info: %s", e)
 
         return series_info
 
@@ -350,7 +361,7 @@ class ChartProcessor:
                     else None
                 }
         except Exception as e:
-            logger.warning(f"Failed to extract chart style: {e}")
+            logger.warning("Failed to extract chart style: %s", e)
 
         return style_info
 

@@ -14,8 +14,8 @@ from typing import Any, Dict, List
 try:
     from mcp.server import Server
     from mcp.types import Resource, TextContent, Tool
-except ImportError:
-    raise ImportError("MCP library not installed. Install with: pip install mcp")
+except ImportError as exc:
+    raise ImportError("MCP library not installed. Install with: pip install mcp") from exc
 
 from .safety import check_ocr_available
 from .tools import (
@@ -23,7 +23,6 @@ from .tools import (
     tool_extract_pdf_content,
     tool_get_pdf_metadata,
     tool_list_pdf_pages,
-    tool_stream_pdf_extraction,
 )
 
 # Set up logging
@@ -51,7 +50,7 @@ async def list_tools() -> list[Tool]:
         )
         tools.append(tool)
 
-    logger.info(f"Listed {len(tools)} PDF processing tools")
+    logger.info("Listed %s PDF processing tools", len(tools))
     return tools
 
 
@@ -66,7 +65,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     if not isinstance(arguments, dict):
         arguments = {}
 
-    logger.info(f"Tool called: {name} args={json.dumps(arguments, default=str)}")
+    logger.info(
+        "Tool called: %s args=%s", name, json.dumps(arguments, default=str)
+    )
 
     try:
         # Dispatch to tool implementations
@@ -97,14 +98,19 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         if not isinstance(raw_result, dict) or ("ok" not in raw_result):
             raw_result = {"ok": True, "data": raw_result}
 
-        logger.info(f"Tool {name} completed ok={raw_result.get('ok')} code={raw_result.get('code','')}")
+        logger.info(
+            "Tool %s completed ok=%s code=%s",
+            name,
+            raw_result.get("ok"),
+            raw_result.get("code", ""),
+        )
 
         # Always serialize tool result as JSON string inside TextContent
         content = TextContent(type="text", text=json.dumps(raw_result, indent=2, default=str))
         return [content]
 
-    except Exception as e:
-        logger.error(f"Tool {name} failed with unexpected exception: {e}")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.error("Tool %s failed with unexpected exception: %s", name, e)
         error_result = {
             "ok": False,
             "code": "Internal",
@@ -131,14 +137,14 @@ async def list_resources() -> list[Resource]:
         )
     ]
 
-    logger.info(f"Listed {len(resources)} resources")
+    logger.info("Listed %s resources", len(resources))
     return resources
 
 
 @server.read_resource()
 async def read_resource(uri: str) -> str:
     """Read resource content."""
-    logger.info(f"Resource requested: {uri}")
+    logger.info("Resource requested: %s", uri)
 
     if uri == "pdf://supported-features":
         features = {
@@ -192,21 +198,21 @@ async def run_server():
 
     # Check dependencies
     try:
-        import pdfplumber
-        import pypdf
-        from PIL import Image
+        import pdfplumber  # pylint: disable=unused-import
+        import pypdf  # pylint: disable=unused-import
+        from PIL import Image  # pylint: disable=unused-import
         logger.info("Core PDF processing libraries loaded successfully")
     except ImportError as e:
-        logger.error(f"Missing required dependency: {e}")
+        logger.error("Missing required dependency: %s", e)
         logger.error("Install dependencies with: pip install -r requirements.txt")
         sys.exit(1)
 
     # Check OCR availability
     ocr_status = "available" if check_ocr_available() else "not available"
-    logger.info(f"OCR support: {ocr_status}")
+    logger.info("OCR support: %s", ocr_status)
 
     # Log available tools
-    logger.info(f"Registered tools: {', '.join(TOOL_METADATA.keys())}")
+    logger.info("Registered tools: %s", ", ".join(TOOL_METADATA.keys()))
 
     try:
         # Run server with stdio transport
@@ -222,8 +228,8 @@ async def run_server():
 
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
-    except Exception as e:
-        logger.error(f"Server error: {e}")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.error("Server error: %s", e)
         raise
 
 

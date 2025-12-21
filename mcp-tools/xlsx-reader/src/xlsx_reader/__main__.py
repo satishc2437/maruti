@@ -8,7 +8,6 @@ Run with:
 import asyncio
 import logging
 import sys
-from typing import Optional
 
 from .server import run
 
@@ -32,8 +31,8 @@ def main() -> None:
         asyncio.run(run())
     except KeyboardInterrupt:
         logging.info("Server shutdown requested")
-    except Exception as e:
-        logging.error(f"Server failed to start: {e}")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logging.error("Server failed to start: %s", e)
         sys.exit(1)
 
 

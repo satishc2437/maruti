@@ -8,7 +8,10 @@
 ## User Scenarios & Testing *(mandatory)*
 
 Per the repo constitution, delivered changes must also satisfy repo quality gates
-(e.g., linting must pass with zero errors, docstring checks must have zero warnings, tests must pass).
+(e.g., linting must pass with zero errors, pylint must have zero errors/warnings,
+docstring checks must have zero warnings, tests must pass).
+
+For this repo, the canonical pylint gate is: `uv run pylint mcp-tools/*/src` (uses repo `.pylintrc`).
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.

@@ -25,7 +25,7 @@ from typing import Any, Dict
 from .config import (MAX_CONTENT_HTML_CHARS, MAX_PLAINTEXT_EXTRACT_CHARS,
                      RATE_LIMIT_MAX_CALLS, RATE_LIMIT_WINDOW_SECONDS,
                      is_valid_share_link)
-from .errors import forbidden_error, user_input_error
+from .errors import user_input_error
 
 # -----------------------------------------------------------------------------
 # Share Link Validation

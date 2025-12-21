@@ -4,7 +4,6 @@ Provides backup, file locking, and size validation functionality.
 """
 
 import logging
-import os
 import shutil
 from pathlib import Path
 from typing import Optional
@@ -39,7 +38,7 @@ def validate_file_path(file_path: str) -> Path:
     try:
         path = Path(file_path).resolve()
     except Exception as e:
-        raise ValidationError(f"Invalid file path: {e}")
+        raise ValidationError(f"Invalid file path: {e}") from e
 
     if not path.exists():
         raise FileAccessError(f"File does not exist: {file_path}")
@@ -69,7 +68,7 @@ def validate_file_size(file_path: Path, max_size: Optional[int] = None) -> None:
                 f"File too large: {size} bytes (max: {max_size} bytes)"
             )
     except OSError as e:
-        raise FileAccessError(f"Cannot read file size: {e}")
+        raise FileAccessError(f"Cannot read file size: {e}") from e
 
 
 def validate_excel_file(file_path: str) -> Path:
@@ -116,10 +115,10 @@ def create_backup(file_path: Path) -> Path:
 
     try:
         shutil.copy2(file_path, backup_path)
-        logger.info(f"Created backup: {backup_path}")
+        logger.info("Created backup: %s", backup_path)
         return backup_path
     except Exception as e:
-        raise FileAccessError(f"Failed to create backup: {e}")
+        raise FileAccessError(f"Failed to create backup: {e}") from e
 
 
 def restore_backup(original_path: Path, backup_path: Optional[Path] = None) -> None:
@@ -140,9 +139,9 @@ def restore_backup(original_path: Path, backup_path: Optional[Path] = None) -> N
 
     try:
         shutil.copy2(backup_path, original_path)
-        logger.info(f"Restored from backup: {backup_path}")
+        logger.info("Restored from backup: %s", backup_path)
     except Exception as e:
-        raise FileAccessError(f"Failed to restore backup: {e}")
+        raise FileAccessError(f"Failed to restore backup: {e}") from e
 
 
 def cleanup_backup(backup_path: Path) -> None:
@@ -154,15 +153,15 @@ def cleanup_backup(backup_path: Path) -> None:
     try:
         if backup_path.exists():
             backup_path.unlink()
-            logger.debug(f"Removed backup: {backup_path}")
-    except Exception as e:
-        logger.warning(f"Failed to remove backup {backup_path}: {e}")
+            logger.debug("Removed backup: %s", backup_path)
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.warning("Failed to remove backup %s: %s", backup_path, e)
 
 
 class FileOperationContext:
     """Context manager for safe file operations with backup and locking."""
 
-    def __init__(self, file_path: str, create_backup: bool = True):
+    def __init__(self, file_path: str, create_backup: bool = True):  # pylint: disable=redefined-outer-name
         """Initialize the context.
 
         Args:
@@ -181,7 +180,7 @@ class FileOperationContext:
             # Acquire file lock
             self.file_lock = FileLock(self.lock_path, timeout=10)
             self.file_lock.acquire()
-            logger.debug(f"Acquired lock: {self.lock_path}")
+            logger.debug("Acquired lock: %s", self.lock_path)
 
             # Create backup if requested
             if self.create_backup:
@@ -189,9 +188,9 @@ class FileOperationContext:
 
             return self.file_path
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self._cleanup()
-            raise FileAccessError(f"Failed to acquire file access: {e}")
+            raise FileAccessError(f"Failed to acquire file access: {e}") from e
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit the context - release lock and cleanup."""
@@ -205,8 +204,8 @@ class FileOperationContext:
             elif exc_type is None and self.backup_path:
                 cleanup_backup(self.backup_path)
 
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("Error during cleanup: %s", e)
         finally:
             self._cleanup()
 
@@ -215,9 +214,9 @@ class FileOperationContext:
         if self.file_lock:
             try:
                 self.file_lock.release()
-                logger.debug(f"Released lock: {self.lock_path}")
-            except Exception as e:
-                logger.error(f"Failed to release lock: {e}")
+                logger.debug("Released lock: %s", self.lock_path)
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                logger.error("Failed to release lock: %s", e)
 
 
 def validate_sheet_name(sheet_name: str) -> str:

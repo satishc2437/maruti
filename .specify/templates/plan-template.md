@@ -36,6 +36,7 @@
 At minimum for Python-only repos, include explicit gates for:
 
 - linting passes with zero errors
+- pylint passes with zero errors and zero warnings (`uv run pylint mcp-tools/*/src`, uses repo `.pylintrc`)
 - docstring checks pass with zero warnings
 - tests are present and meaningful
 - coverage requirements (if mandated by the repo)

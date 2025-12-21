@@ -14,8 +14,8 @@ from typing import Any, Dict, List
 try:
     from mcp.server import Server
     from mcp.types import Resource, TextContent, Tool
-except ImportError:
-    raise ImportError("MCP library not installed. Install with: pip install mcp")
+except ImportError as exc:
+    raise ImportError("MCP library not installed. Install with: pip install mcp") from exc
 
 from .memory_ops import DEFAULT_ALLOWED_SECTIONS, SCHEMA_VERSION
 from .tools import (
@@ -51,7 +51,7 @@ async def list_tools() -> list[Tool]:
         )
         tools.append(tool)
 
-    logger.info(f"Listed {len(tools)} agent memory tools")
+    logger.info("Listed %s agent memory tools", len(tools))
     return tools
 
 
@@ -66,7 +66,9 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
     if not isinstance(arguments, dict):
         arguments = {}
 
-    logger.info(f"Tool called: {name} args={json.dumps(arguments, default=str)}")
+    logger.info(
+        "Tool called: %s args=%s", name, json.dumps(arguments, default=str)
+    )
 
     try:
         # Dispatch to tool implementations
@@ -93,14 +95,19 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[TextContent]:
         if not isinstance(raw_result, dict) or ("ok" not in raw_result):
             raw_result = {"ok": True, "data": raw_result}
 
-        logger.info(f"Tool {name} completed ok={raw_result.get('ok')} code={raw_result.get('code','')}")
+        logger.info(
+            "Tool %s completed ok=%s code=%s",
+            name,
+            raw_result.get("ok"),
+            raw_result.get("code", ""),
+        )
 
         # Always serialize tool result as JSON string inside TextContent
         content = TextContent(type="text", text=json.dumps(raw_result, indent=2, default=str))
         return [content]
 
-    except Exception as e:
-        logger.error(f"Tool {name} failed with unexpected exception: {e}")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.error("Tool %s failed with unexpected exception: %s", name, e)
         error_result = {
             "ok": False,
             "code": "Internal",
@@ -132,14 +139,14 @@ async def list_resources() -> list[Resource]:
         )
     ]
 
-    logger.info(f"Listed {len(resources)} resources")
+    logger.info("Listed %s resources", len(resources))
     return resources
 
 
 @server.read_resource()
 async def read_resource(uri: str) -> str:
     """Read resource content."""
-    logger.info(f"Resource requested: {uri}")
+    logger.info("Resource requested: %s", uri)
 
     if uri == "memory://schema-info":
         schema_info = {
@@ -260,8 +267,8 @@ async def run_server():
     logger.info("Starting Agent Memory MCP Server...")
 
     # Log available tools
-    logger.info(f"Registered tools: {', '.join(TOOL_METADATA.keys())}")
-    logger.info(f"Schema version: {SCHEMA_VERSION}")
+    logger.info("Registered tools: %s", ", ".join(TOOL_METADATA.keys()))
+    logger.info("Schema version: %s", SCHEMA_VERSION)
 
     try:
         # Run server with stdio transport
@@ -277,8 +284,8 @@ async def run_server():
 
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
-    except Exception as e:
-        logger.error(f"Server error: {e}")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.error("Server error: %s", e)
         raise
 
 

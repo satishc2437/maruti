@@ -8,11 +8,11 @@ import io
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import pandas as pd
 
-from ..errors import ValidationError, WorksheetError, success_response
+from ..errors import WorksheetError, success_response
 from .workbook import ExcelProcessor
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,11 @@ class DataExporter:
             writer = csv.writer(csv_content, delimiter=delimiter)
 
             rows_exported = 0
-            for row_data in worksheet_data["data"]:
+            rows = worksheet_data["data"]
+            if not include_headers and rows:
+                rows = rows[1:]
+
+            for row_data in rows:
                 row_values = []
                 for cell in row_data:
                     value = cell.get("value")
@@ -105,7 +109,7 @@ class DataExporter:
             return result
 
         except Exception as e:
-            raise WorksheetError(f"Failed to export to CSV: {e}")
+            raise WorksheetError(f"Failed to export to CSV: {e}") from e
 
     def export_workbook_to_json(
         self,
@@ -184,8 +188,10 @@ class DataExporter:
                         "data": processed_data,
                     }
 
-                except Exception as e:
-                    logger.warning(f"Failed to export sheet '{sheet_name}': {e}")
+                except Exception as e:  # pylint: disable=broad-exception-caught
+                    logger.warning(
+                        "Failed to export sheet '%s': %s", sheet_name, e
+                    )
                     workbook_json["sheets"][sheet_name] = {"error": str(e)}
 
             result = {
@@ -214,7 +220,7 @@ class DataExporter:
             return result
 
         except Exception as e:
-            raise WorksheetError(f"Failed to export to JSON: {e}")
+            raise WorksheetError(f"Failed to export to JSON: {e}") from e
 
     def export_sheet_to_pandas(
         self, sheet_name: str, include_headers: bool = True
@@ -254,7 +260,7 @@ class DataExporter:
             return df
 
         except Exception as e:
-            raise WorksheetError(f"Failed to export to pandas: {e}")
+            raise WorksheetError(f"Failed to export to pandas: {e}") from e
 
     def get_summary_statistics(self, sheet_name: str) -> Dict[str, Any]:
         """Generate summary statistics for worksheet data.
@@ -312,4 +318,4 @@ class DataExporter:
             return stats
 
         except Exception as e:
-            raise WorksheetError(f"Failed to generate statistics: {e}")
+            raise WorksheetError(f"Failed to generate statistics: {e}") from e

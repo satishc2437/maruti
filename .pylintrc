@@ -1,0 +1,12 @@
+[MAIN]
+# Keep the gate focused on actual correctness issues.
+# Convention (C) and Refactor (R) findings are valuable but are not part of the
+# repo constitution's "zero errors/warnings" requirement.
+disable=C,R
+
+# Avoid scanning transient/third-party output.
+ignore-patterns=^\.venv$,^\.ruff_cache$,^\.pytest_cache$,^__pycache__$
+
+[REPORTS]
+reports=no
+score=no

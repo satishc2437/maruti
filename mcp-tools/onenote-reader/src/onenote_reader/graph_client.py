@@ -38,8 +38,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from .auth import ensure_token
-from .config import MAX_PLAINTEXT_EXTRACT_CHARS
-from .errors import internal_error, user_input_error
+from .errors import user_input_error
 from .safety import (check_rate_limit, truncate_plaintext,
                      validate_content_html, validate_share_link)
 

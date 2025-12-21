@@ -29,7 +29,7 @@ except ImportError as e:
         "MCP library not installed. Install with: pip install mcp"
     ) from e
 
-from .errors import ensure_error, internal_error
+from .errors import internal_error
 from .tools import TOOL_DISPATCH, TOOL_METADATA
 
 # -----------------------------------------------------------------------------

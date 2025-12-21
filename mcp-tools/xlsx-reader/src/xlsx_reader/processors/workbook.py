@@ -26,6 +26,18 @@ class ExcelProcessor:
         self._workbook: Optional[Workbook] = None
         self._file_path: Optional[Path] = None
 
+    def is_workbook_loaded(self) -> bool:
+        """Return True if a workbook is currently loaded."""
+        return self._workbook is not None
+
+    def get_loaded_file_path(self) -> Optional[Path]:
+        """Return the currently loaded workbook path, if any."""
+        return self._file_path
+
+    def get_loaded_file_path_str(self) -> Optional[str]:
+        """Return the currently loaded workbook path as a string, if any."""
+        return str(self._file_path) if self._file_path else None
+
     def load_workbook(self, file_path: str, read_only: bool = False) -> Dict[str, Any]:
         """Load an Excel workbook from file.
 

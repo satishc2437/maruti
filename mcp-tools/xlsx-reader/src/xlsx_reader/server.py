@@ -3,28 +3,23 @@
 Provides comprehensive Excel workbook reading and editing capabilities.
 """
 
-import asyncio
+# This server intentionally catches broad exceptions to return structured MCP
+# error envelopes instead of crashing.
+# pylint: disable=broad-exception-caught
+
 import json
 import logging
 import sys
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 # MCP imports
 try:
     from mcp.server import Server
     from mcp.types import Resource, TextContent, Tool
-except ImportError:
-    raise ImportError("MCP library not installed. Install with: pip install mcp")
+except ImportError as exc:
+    raise ImportError("MCP library not installed. Install with: pip install mcp") from exc
 
-from .errors import (
-    forbidden_error,
-    internal_error,
-    not_found_error,
-    success_response,
-    timeout_error,
-    user_input_error,
-)
+from .errors import internal_error, success_response, user_input_error
 from .processors.workbook import ExcelProcessor
 from .safety import FileOperationContext
 
@@ -65,7 +60,7 @@ async def handle_list_resources() -> List[Resource]:
 @server.read_resource()
 async def handle_read_resource(uri: str) -> str:
     """Handle resource reading requests."""
-    logger.info(f"Resource requested: {uri}")
+    logger.info("Resource requested: %s", uri)
 
     if uri == "xlsx://supported-formats":
         formats = {
@@ -93,7 +88,7 @@ async def handle_read_resource(uri: str) -> str:
         try:
             workbook_info = (
                 excel_processor.get_workbook_info()
-                if excel_processor._workbook
+                if excel_processor.is_workbook_loaded()
                 else None
             )
         except Exception:
@@ -324,7 +319,9 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[TextCon
     if not isinstance(arguments, dict):
         arguments = {}
 
-    logger.info(f"Tool called: {name} args={json.dumps(arguments, default=str)}")
+    logger.info(
+        "Tool called: %s args=%s", name, json.dumps(arguments, default=str)
+    )
 
     try:
         # Route to appropriate handler
@@ -353,7 +350,10 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[TextCon
             raw_result = {"ok": True, "data": raw_result}
 
         logger.info(
-            f"Tool {name} completed ok={raw_result.get('ok')} code={raw_result.get('code', '')}"
+            "Tool %s completed ok=%s code=%s",
+            name,
+            raw_result.get("ok"),
+            raw_result.get("code", ""),
         )
 
         # Always serialize tool result as JSON string inside TextContent
@@ -362,8 +362,8 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[TextCon
         )
         return [content]
 
-    except Exception as e:
-        logger.error(f"Tool {name} failed with unexpected exception: {e}")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.error("Tool %s failed with unexpected exception: %s", name, e)
         error_result = {
             "ok": False,
             "code": "Internal",
@@ -408,8 +408,8 @@ async def _read_worksheet_data(args: Dict[str, Any]) -> Dict[str, Any]:
 
         # Load workbook if not already loaded or different file
         if (
-            not excel_processor._workbook
-            or str(excel_processor._file_path) != file_path
+            not excel_processor.is_workbook_loaded()
+            or excel_processor.get_loaded_file_path_str() != file_path
         ):
             excel_processor.load_workbook(file_path, read_only=True)
 
@@ -446,8 +446,8 @@ async def _update_cell_value(args: Dict[str, Any]) -> Dict[str, Any]:
         with FileOperationContext(file_path, create_backup=True):
             # Load workbook for editing
             if (
-                not excel_processor._workbook
-                or str(excel_processor._file_path) != file_path
+                not excel_processor.is_workbook_loaded()
+                or excel_processor.get_loaded_file_path_str() != file_path
             ):
                 excel_processor.load_workbook(file_path, read_only=False)
 
@@ -479,8 +479,8 @@ async def _update_cell_range(args: Dict[str, Any]) -> Dict[str, Any]:
 
         with FileOperationContext(file_path, create_backup=True):
             if (
-                not excel_processor._workbook
-                or str(excel_processor._file_path) != file_path
+                not excel_processor.is_workbook_loaded()
+                or excel_processor.get_loaded_file_path_str() != file_path
             ):
                 excel_processor.load_workbook(file_path, read_only=False)
 
@@ -508,8 +508,8 @@ async def _add_worksheet(args: Dict[str, Any]) -> Dict[str, Any]:
 
         with FileOperationContext(file_path, create_backup=True):
             if (
-                not excel_processor._workbook
-                or str(excel_processor._file_path) != file_path
+                not excel_processor.is_workbook_loaded()
+                or excel_processor.get_loaded_file_path_str() != file_path
             ):
                 excel_processor.load_workbook(file_path, read_only=False)
 
@@ -534,8 +534,8 @@ async def _delete_worksheet(args: Dict[str, Any]) -> Dict[str, Any]:
 
         with FileOperationContext(file_path, create_backup=True):
             if (
-                not excel_processor._workbook
-                or str(excel_processor._file_path) != file_path
+                not excel_processor.is_workbook_loaded()
+                or excel_processor.get_loaded_file_path_str() != file_path
             ):
                 excel_processor.load_workbook(file_path, read_only=False)
 
@@ -562,8 +562,8 @@ async def _export_to_csv(args: Dict[str, Any]) -> Dict[str, Any]:
 
         # Load workbook if needed
         if (
-            not excel_processor._workbook
-            or str(excel_processor._file_path) != file_path
+            not excel_processor.is_workbook_loaded()
+            or excel_processor.get_loaded_file_path_str() != file_path
         ):
             excel_processor.load_workbook(file_path, read_only=True)
 
@@ -577,7 +577,11 @@ async def _export_to_csv(args: Dict[str, Any]) -> Dict[str, Any]:
         csv_content = io.StringIO()
         writer = csv.writer(csv_content)
 
-        for row_data in worksheet_data["data"]:
+        rows = worksheet_data["data"]
+        if not include_headers and rows:
+            rows = rows[1:]
+
+        for row_data in rows:
             row_values = [cell["value"] for cell in row_data]
             writer.writerow(row_values)
 
@@ -586,7 +590,7 @@ async def _export_to_csv(args: Dict[str, Any]) -> Dict[str, Any]:
 
         result = {
             "sheet_name": sheet_name,
-            "rows_exported": len(worksheet_data["data"]),
+            "rows_exported": len(rows),
             "csv_data": csv_string if not output_path else None,
         }
 
@@ -612,7 +616,7 @@ async def _save_workbook(args: Dict[str, Any]) -> Dict[str, Any]:
         if not file_path:
             return user_input_error("Parameter 'file_path' is required")
 
-        if not excel_processor._workbook:
+        if not excel_processor.is_workbook_loaded():
             return user_input_error("No workbook is currently loaded")
 
         result = excel_processor.save_workbook(file_path=save_as_path or file_path)
@@ -635,8 +639,8 @@ async def run() -> None:
                 read_stream, write_stream, server.create_initialization_options()
             )
 
-    except Exception as e:
-        logger.error(f"Server error: {e}")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.error("Server error: %s", e)
         raise
     finally:
         # Cleanup

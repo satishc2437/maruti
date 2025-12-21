@@ -20,8 +20,8 @@ import logging
 from typing import Any, Dict
 
 from .errors import user_input_error
-from .graph_client import (list_page_children, read_page, resolve_share_link,
-                           traverse_notebook, write_page)
+from .graph_client import (list_page_children, read_page, traverse_notebook,
+                           write_page)
 from .safety import validate_content_html, validate_share_link
 
 logger = logging.getLogger(__name__)
@@ -150,7 +150,7 @@ def _require_share_link(params: Dict[str, Any]) -> str:
     try:
         validate_share_link(link)
     except ValueError as e:
-        raise ValueError(str(e))
+        raise ValueError(str(e)) from e
     return link
 
 # ---------------------------------------------------------------------------

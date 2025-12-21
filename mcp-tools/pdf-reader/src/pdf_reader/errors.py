@@ -4,9 +4,9 @@ Implements consistent error classification and formatting for
 all PDF processing operations.
 """
 
-from typing import Optional, Dict, Any
 import logging
 import uuid
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -14,26 +14,26 @@ logger = logging.getLogger(__name__)
 def user_input_error(message: str, hint: Optional[str] = None, correlation_id: Optional[str] = None) -> Dict[str, Any]:
     """Return structured UserInput error."""
     error_id = correlation_id or uuid.uuid4().hex[:8]
-    logger.info(f"UserInput error [{error_id}]: {message}")
-    
+    logger.info("UserInput error [%s]: %s", error_id, message)
+
     error = {
         "ok": False,
         "code": "UserInput",
         "message": message,
         "correlation_id": error_id
     }
-    
+
     if hint:
         error["hint"] = hint
-    
+
     return error
 
 
 def forbidden_error(message: str, correlation_id: Optional[str] = None) -> Dict[str, Any]:
     """Return structured Forbidden error."""
     error_id = correlation_id or uuid.uuid4().hex[:8]
-    logger.warning(f"Forbidden error [{error_id}]: {message}")
-    
+    logger.warning("Forbidden error [%s]: %s", error_id, message)
+
     return {
         "ok": False,
         "code": "Forbidden",
@@ -45,8 +45,8 @@ def forbidden_error(message: str, correlation_id: Optional[str] = None) -> Dict[
 def not_found_error(message: str, correlation_id: Optional[str] = None) -> Dict[str, Any]:
     """Return structured NotFound error."""
     error_id = correlation_id or uuid.uuid4().hex[:8]
-    logger.info(f"NotFound error [{error_id}]: {message}")
-    
+    logger.info("NotFound error [%s]: %s", error_id, message)
+
     return {
         "ok": False,
         "code": "NotFound",
@@ -58,8 +58,8 @@ def not_found_error(message: str, correlation_id: Optional[str] = None) -> Dict[
 def timeout_error(message: str, correlation_id: Optional[str] = None) -> Dict[str, Any]:
     """Return structured Timeout error."""
     error_id = correlation_id or uuid.uuid4().hex[:8]
-    logger.warning(f"Timeout error [{error_id}]: {message}")
-    
+    logger.warning("Timeout error [%s]: %s", error_id, message)
+
     return {
         "ok": False,
         "code": "Timeout",
@@ -71,27 +71,27 @@ def timeout_error(message: str, correlation_id: Optional[str] = None) -> Dict[st
 def internal_error(message: str, detail: Optional[str] = None, correlation_id: Optional[str] = None) -> Dict[str, Any]:
     """Return structured Internal error."""
     error_id = correlation_id or uuid.uuid4().hex[:8]
-    logger.error(f"Internal error [{error_id}]: {message} - {detail}")
-    
+    logger.error("Internal error [%s]: %s - %s", error_id, message, detail)
+
     error = {
         "ok": False,
         "code": "Internal",
         "message": message,
         "correlation_id": error_id
     }
-    
+
     if detail:
         # Truncate detail to avoid exposing too much information
         error["detail"] = detail[:200] if len(detail) > 200 else detail
-    
+
     return error
 
 
 def cancellation_error(message: str, correlation_id: Optional[str] = None) -> Dict[str, Any]:
     """Return structured Cancelled error."""
     error_id = correlation_id or uuid.uuid4().hex[:8]
-    logger.info(f"Cancellation [{error_id}]: {message}")
-    
+    logger.info("Cancellation [%s]: %s", error_id, message)
+
     return {
         "ok": False,
         "code": "Cancelled",

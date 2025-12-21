@@ -3,10 +3,15 @@
 Handles pivot table extraction, modification, and creation.
 """
 
-import logging
-from typing import Any, Dict, List, Optional
+# openpyxl stores pivot tables on worksheet internals (e.g., sheet._pivots).
+# This module inspects those internals and catches broad exceptions to keep
+# extraction best-effort.
+# pylint: disable=protected-access,broad-exception-caught
 
-from ..errors import PivotTableError, WorksheetError
+import logging
+from typing import Any, Dict, List
+
+from ..errors import PivotTableError
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +64,7 @@ class PivotTableProcessor:
         except Exception as e:
             raise PivotTableError(
                 f"Failed to extract pivot tables from sheet '{sheet_name}': {e}"
-            )
+            ) from e
 
     def extract_all_pivot_tables(self) -> Dict[str, List[Dict[str, Any]]]:
         """Extract pivot tables from all worksheets in the workbook.
@@ -80,14 +85,18 @@ class PivotTableProcessor:
                         all_pivots[sheet_name] = pivots
                 except Exception as e:
                     logger.warning(
-                        f"Failed to extract pivot tables from '{sheet_name}': {e}"
+                        "Failed to extract pivot tables from '%s': %s",
+                        sheet_name,
+                        e,
                     )
                     all_pivots[sheet_name] = {"error": str(e)}
 
             return all_pivots
 
         except Exception as e:
-            raise PivotTableError(f"Failed to extract pivot tables from workbook: {e}")
+            raise PivotTableError(
+                f"Failed to extract pivot tables from workbook: {e}"
+            ) from e
 
     def create_pivot_table(
         self,
@@ -140,7 +149,7 @@ class PivotTableProcessor:
             }
 
         except Exception as e:
-            raise PivotTableError(f"Failed to create pivot table: {e}")
+            raise PivotTableError(f"Failed to create pivot table: {e}") from e
 
     def modify_pivot_table(
         self, sheet_name: str, pivot_index: int, modifications: Dict[str, Any]
@@ -182,7 +191,7 @@ class PivotTableProcessor:
             }
 
         except Exception as e:
-            raise PivotTableError(f"Failed to modify pivot table: {e}")
+            raise PivotTableError(f"Failed to modify pivot table: {e}") from e
 
     def delete_pivot_table(self, sheet_name: str, pivot_index: int) -> Dict[str, Any]:
         """Delete a pivot table from the worksheet.
@@ -211,7 +220,7 @@ class PivotTableProcessor:
 
             # Remove pivot table (limited support)
             try:
-                pivot = sheet._pivots.pop(pivot_index)
+                _ = sheet._pivots.pop(pivot_index)
                 deleted = True
             except Exception:
                 deleted = False
@@ -227,7 +236,7 @@ class PivotTableProcessor:
             }
 
         except Exception as e:
-            raise PivotTableError(f"Failed to delete pivot table: {e}")
+            raise PivotTableError(f"Failed to delete pivot table: {e}") from e
 
     def get_pivot_data_summary(
         self, sheet_name: str, pivot_index: int
@@ -273,7 +282,7 @@ class PivotTableProcessor:
             return summary
 
         except Exception as e:
-            raise PivotTableError(f"Failed to get pivot table summary: {e}")
+            raise PivotTableError(f"Failed to get pivot table summary: {e}") from e
 
     # Helper methods
 
@@ -288,7 +297,7 @@ class PivotTableProcessor:
                     "refresh_on_load": getattr(cache, "refreshOnLoad", None),
                 }
         except Exception as e:
-            logger.warning(f"Failed to extract cache definition: {e}")
+            logger.warning("Failed to extract cache definition: %s", e)
 
         return {}
 
@@ -304,7 +313,7 @@ class PivotTableProcessor:
                     "first_data_col": getattr(location, "firstDataCol", None),
                 }
         except Exception as e:
-            logger.warning(f"Failed to extract pivot location: {e}")
+            logger.warning("Failed to extract pivot location: %s", e)
 
         return {}
 
@@ -324,7 +333,7 @@ class PivotTableProcessor:
                     }
                     fields.append(field_info)
         except Exception as e:
-            logger.warning(f"Failed to extract pivot fields: {e}")
+            logger.warning("Failed to extract pivot fields: %s", e)
 
         return fields
 
@@ -343,7 +352,7 @@ class PivotTableProcessor:
                     }
                     data_fields.append(field_info)
         except Exception as e:
-            logger.warning(f"Failed to extract data fields: {e}")
+            logger.warning("Failed to extract data fields: %s", e)
 
         return data_fields
 
@@ -355,7 +364,7 @@ class PivotTableProcessor:
                     getattr(field, "x", i) for i, field in enumerate(pivot.rowFields)
                 ]
         except Exception as e:
-            logger.warning(f"Failed to extract row fields: {e}")
+            logger.warning("Failed to extract row fields: %s", e)
 
         return []
 
@@ -367,7 +376,7 @@ class PivotTableProcessor:
                     getattr(field, "x", i) for i, field in enumerate(pivot.colFields)
                 ]
         except Exception as e:
-            logger.warning(f"Failed to extract column fields: {e}")
+            logger.warning("Failed to extract column fields: %s", e)
 
         return []
 
@@ -379,7 +388,7 @@ class PivotTableProcessor:
                     getattr(field, "x", i) for i, field in enumerate(pivot.pageFields)
                 ]
         except Exception as e:
-            logger.warning(f"Failed to extract filter fields: {e}")
+            logger.warning("Failed to extract filter fields: %s", e)
 
         return []
 
@@ -398,6 +407,6 @@ class PivotTableProcessor:
                     "show_col_stripes": getattr(style, "showColStripes", None),
                 }
         except Exception as e:
-            logger.warning(f"Failed to extract pivot style: {e}")
+            logger.warning("Failed to extract pivot style: %s", e)
 
         return style_info

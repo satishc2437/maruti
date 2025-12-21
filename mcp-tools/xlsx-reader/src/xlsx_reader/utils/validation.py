@@ -3,8 +3,7 @@
 Provides consistent validation for tool parameters.
 """
 
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set
 
 from ..errors import ValidationError
 
@@ -127,10 +126,10 @@ def validate_int_param(
     if not isinstance(value, int):
         try:
             value = int(value)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as exc:
             raise ValidationError(
                 f"Parameter '{param_name}' must be an integer, got {type(value).__name__}"
-            )
+            ) from exc
 
     if min_value is not None and value < min_value:
         raise ValidationError(
