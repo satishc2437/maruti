@@ -41,7 +41,7 @@ from .errors import internal_error
 logger = logging.getLogger(__name__)
 
 # Memory-only token storage (single token model)
-_token: Optional[Dict[str, Any]] = None
+_TOKEN_STORE: Dict[str, Optional[Dict[str, Any]]] = {"token": None}
 
 # Planned default scopes (minimal OneNote access)
 DEFAULT_SCOPES = ["Notes.ReadWrite.All", "offline_access"]
@@ -55,17 +55,16 @@ def get_cached_token() -> Optional[Dict[str, Any]]:
     """
     Return current token dict if present & not expired (scaffold just returns token).
     """
-    global _token
-    if _token is None:
+    token = _TOKEN_STORE["token"]
+    if token is None:
         return None
     # Future: check expiry
-    return dict(_token)
+    return dict(token)
 
 
 def clear_token() -> None:
     """Clear in-memory token."""
-    global _token
-    _token = None
+    _TOKEN_STORE["token"] = None
     logger.info("Auth: token cleared")
 
 
@@ -77,25 +76,28 @@ def ensure_token(scopes: Optional[List[str]] = None) -> Dict[str, Any]:
         dict with placeholder token in scaffold phase.
         Future: real token structure or error dict from errors.py helpers.
     """
-    global _token
     requested_scopes = scopes or DEFAULT_SCOPES
 
-    if _token:
+    token = _TOKEN_STORE["token"]
+
+    if token:
         # future: verify expiry
         return {"ok": True, "token": {"access_token": "[scaffold-placeholder]", "scopes": requested_scopes}}
 
     # Scaffold behavior: simulate acquisition without network
     try:
-        _token = {
-            "access_token": "[scaffold-placeholder]",
-            "scopes": requested_scopes,
-            "acquired_at": _now(),
-            "expires_at": _now() + 3600,
-        }
-        logger.info("Auth: simulated token acquisition (scaffold)")
-        return {"ok": True, "token": {"access_token": "[scaffold-placeholder]", "scopes": requested_scopes}}
-    except Exception as exc:
-        return internal_error("Failed to acquire token", detail=str(exc))
+        acquired_at = _now()
+    except RuntimeError as exc:
+        return internal_error("Auth: token acquisition failed", detail=str(exc))
+
+    _TOKEN_STORE["token"] = {
+        "access_token": "[scaffold-placeholder]",
+        "scopes": requested_scopes,
+        "acquired_at": acquired_at,
+        "expires_at": acquired_at + 3600,
+    }
+    logger.info("Auth: simulated token acquisition (scaffold)")
+    return {"ok": True, "token": {"access_token": "[scaffold-placeholder]", "scopes": requested_scopes}}
 
 
 def auth_status() -> Dict[str, Any]:

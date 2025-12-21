@@ -6,15 +6,19 @@ validation, error handling, and MCP-compatible interfaces.
 """
 
 import asyncio
-from typing import Dict, Any, List, Optional
 import logging
+from collections.abc import Awaitable, Callable
+from typing import Any, Dict
 
-from .pdf_processor import PDFProcessor
-from .safety import PDFSafetyError, FileSizeError, PathTraversalError, UnsupportedFileError
 from .errors import (
-    user_input_error, forbidden_error, not_found_error, 
-    timeout_error, internal_error, cancellation_error
+    forbidden_error,
+    internal_error,
+    not_found_error,
+    timeout_error,
+    user_input_error,
 )
+from .pdf_processor import PDFProcessor
+from .safety import FileSizeError, PathTraversalError, PDFSafetyError, UnsupportedFileError
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +44,7 @@ TOOL_METADATA = {
                     "description": "Whether to extract images from the PDF"
                 },
                 "include_tables": {
-                    "type": "boolean", 
+                    "type": "boolean",
                     "default": True,
                     "description": "Whether to extract table structures"
                 },
@@ -141,24 +145,24 @@ def validate_extract_pdf_content_params(params: Dict[str, Any]) -> Dict[str, Any
     file_path = params.get("file_path")
     if not file_path or not isinstance(file_path, str):
         raise ValueError("Parameter 'file_path' is required and must be a string")
-    
+
     pages = params.get("pages")
     if pages is not None:
         if not isinstance(pages, list) or not all(isinstance(p, int) and p > 0 for p in pages):
             raise ValueError("Parameter 'pages' must be a list of positive integers")
-    
+
     include_images = params.get("include_images", True)
     if not isinstance(include_images, bool):
         raise ValueError("Parameter 'include_images' must be a boolean")
-    
+
     include_tables = params.get("include_tables", True)
     if not isinstance(include_tables, bool):
         raise ValueError("Parameter 'include_tables' must be a boolean")
-    
+
     use_ocr = params.get("use_ocr", False)
     if not isinstance(use_ocr, bool):
         raise ValueError("Parameter 'use_ocr' must be a boolean")
-    
+
     # OCR functionality removed - always set to False
     return {
         "file_path": file_path,
@@ -174,7 +178,7 @@ def validate_metadata_params(params: Dict[str, Any]) -> Dict[str, Any]:
     file_path = params.get("file_path")
     if not file_path or not isinstance(file_path, str):
         raise ValueError("Parameter 'file_path' is required and must be a string")
-    
+
     return {"file_path": file_path}
 
 
@@ -183,19 +187,19 @@ def validate_list_pages_params(params: Dict[str, Any]) -> Dict[str, Any]:
     file_path = params.get("file_path")
     if not file_path or not isinstance(file_path, str):
         raise ValueError("Parameter 'file_path' is required and must be a string")
-    
+
     start_page = params.get("start_page", 1)
     if not isinstance(start_page, int) or start_page < 1:
         raise ValueError("Parameter 'start_page' must be a positive integer")
-    
+
     end_page = params.get("end_page")
     if end_page is not None and (not isinstance(end_page, int) or end_page < 1):
         raise ValueError("Parameter 'end_page' must be a positive integer")
-    
+
     preview_length = params.get("preview_length", 200)
     if not isinstance(preview_length, int) or not (50 <= preview_length <= 1000):
         raise ValueError("Parameter 'preview_length' must be an integer between 50 and 1000")
-    
+
     return {
         "file_path": file_path,
         "start_page": start_page,
@@ -204,9 +208,13 @@ def validate_list_pages_params(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-async def run_with_timeout(coro, timeout_seconds: float = 30.0):
-    """Run coroutine with timeout protection."""
+async def run_with_timeout(
+    coro_or_factory: Awaitable[Any] | Callable[[], Awaitable[Any]],
+    timeout_seconds: float = 30.0,
+):
+    """Run an awaitable (or awaitable factory) with timeout protection."""
     try:
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await asyncio.wait_for(coro, timeout=timeout_seconds)
     except asyncio.TimeoutError:
         return timeout_error(f"Operation exceeded {timeout_seconds:.1f}s limit")
@@ -220,24 +228,24 @@ async def tool_extract_pdf_content(params: Dict[str, Any]) -> Dict[str, Any]:
         validated = validate_extract_pdf_content_params(params or {})
     except ValueError as e:
         return user_input_error(str(e), hint="Check parameter types and values")
-    
+
     try:
         result = await run_with_timeout(
-            pdf_processor.extract_full_content(
+            lambda: pdf_processor.extract_full_content(
                 validated["file_path"],
                 validated["pages"],
                 validated["include_images"],
                 validated["include_tables"],
-                validated["use_ocr"]
+                validated["use_ocr"],
             ),
-            timeout_seconds=60.0  # Longer timeout for full extraction
+            timeout_seconds=60.0,  # Longer timeout for full extraction
         )
-        
+
         if isinstance(result, dict) and not result.get("ok", True):
             return result  # Already an error response
-        
+
         return {"ok": True, "data": result}
-        
+
     except PDFSafetyError as e:
         if isinstance(e, PathTraversalError):
             return forbidden_error(str(e))
@@ -249,7 +257,7 @@ async def tool_extract_pdf_content(params: Dict[str, Any]) -> Dict[str, Any]:
             return forbidden_error(str(e))
     except FileNotFoundError as e:
         return not_found_error(str(e))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return internal_error("Failed to extract PDF content", detail=str(e))
 
 
@@ -261,18 +269,18 @@ async def tool_get_pdf_metadata(params: Dict[str, Any]) -> Dict[str, Any]:
         validated = validate_metadata_params(params or {})
     except ValueError as e:
         return user_input_error(str(e), hint="Provide a valid file_path string")
-    
+
     try:
         result = await run_with_timeout(
-            pdf_processor.extract_metadata(validated["file_path"]),
-            timeout_seconds=10.0
+            lambda: pdf_processor.extract_metadata(validated["file_path"]),
+            timeout_seconds=10.0,
         )
-        
+
         if isinstance(result, dict) and not result.get("ok", True):
             return result  # Already an error response
-        
+
         return {"ok": True, "data": result}
-        
+
     except PDFSafetyError as e:
         if isinstance(e, PathTraversalError):
             return forbidden_error(str(e))
@@ -284,7 +292,7 @@ async def tool_get_pdf_metadata(params: Dict[str, Any]) -> Dict[str, Any]:
             return forbidden_error(str(e))
     except FileNotFoundError as e:
         return not_found_error(str(e))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return internal_error("Failed to extract PDF metadata", detail=str(e))
 
 
@@ -296,23 +304,23 @@ async def tool_list_pdf_pages(params: Dict[str, Any]) -> Dict[str, Any]:
         validated = validate_list_pages_params(params or {})
     except ValueError as e:
         return user_input_error(str(e), hint="Check parameter types and ranges")
-    
+
     try:
         result = await run_with_timeout(
-            pdf_processor.extract_page_text_preview(
+            lambda: pdf_processor.extract_page_text_preview(
                 validated["file_path"],
                 validated["start_page"],
                 validated["end_page"],
-                validated["preview_length"]
+                validated["preview_length"],
             ),
-            timeout_seconds=20.0
+            timeout_seconds=20.0,
         )
-        
+
         if isinstance(result, dict) and not result.get("ok", True):
             return result  # Already an error response
-        
+
         return {"ok": True, "data": result}
-        
+
     except PDFSafetyError as e:
         if isinstance(e, PathTraversalError):
             return forbidden_error(str(e))
@@ -324,7 +332,7 @@ async def tool_list_pdf_pages(params: Dict[str, Any]) -> Dict[str, Any]:
             return forbidden_error(str(e))
     except FileNotFoundError as e:
         return not_found_error(str(e))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return internal_error("Failed to list PDF pages", detail=str(e))
 
 
@@ -336,7 +344,7 @@ async def tool_stream_pdf_extraction(params: Dict[str, Any], send_event) -> Dict
         validated = validate_extract_pdf_content_params(params or {})
     except ValueError as e:
         return user_input_error(str(e), hint="Check parameter types and values")
-    
+
     try:
         result = await pdf_processor.stream_content_extraction(
             validated["file_path"],
@@ -346,9 +354,9 @@ async def tool_stream_pdf_extraction(params: Dict[str, Any], send_event) -> Dict
             validated["include_tables"],
             validated["use_ocr"]
         )
-        
+
         return {"ok": True, "data": result}
-        
+
     except PDFSafetyError as e:
         await send_event({"type": "error", "message": str(e)})
         if isinstance(e, PathTraversalError):
@@ -362,6 +370,6 @@ async def tool_stream_pdf_extraction(params: Dict[str, Any], send_event) -> Dict
     except FileNotFoundError as e:
         await send_event({"type": "error", "message": str(e)})
         return not_found_error(str(e))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         await send_event({"type": "error", "message": f"Processing failed: {str(e)}"})
         return internal_error("Failed to stream PDF extraction", detail=str(e))

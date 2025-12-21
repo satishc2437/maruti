@@ -79,7 +79,8 @@ def test_tool_append_entry_all_exception_branches(monkeypatch, tmp_path):
         def append_entry(self, *args, **kwargs):
             raise RuntimeError("boom")
 
-    async def run_direct(coro, timeout_seconds=10.0):
+    async def run_direct(coro_or_factory, timeout_seconds=10.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "MemoryManager", Explode)
@@ -109,7 +110,8 @@ def test_tool_read_summary_validation_and_generic_errors(monkeypatch, tmp_path):
         def read_summary(self):
             raise RuntimeError("boom")
 
-    async def run_direct(coro, timeout_seconds=10.0):
+    async def run_direct(coro_or_factory, timeout_seconds=10.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "MemoryManager", Explode)
@@ -147,7 +149,8 @@ def test_tool_update_summary_validation_and_error_branches(monkeypatch, tmp_path
         def update_summary(self, *args, **kwargs):
             raise FileNotFoundError("missing")
 
-    async def run_direct(coro, timeout_seconds=10.0):
+    async def run_direct(coro_or_factory, timeout_seconds=10.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "MemoryManager", Explode)
@@ -185,7 +188,8 @@ def test_tool_list_sessions_validation_and_file_not_found(monkeypatch, tmp_path)
         def list_sessions(self, *args, **kwargs):
             raise FileNotFoundError("missing")
 
-    async def run_direct(coro, timeout_seconds=10.0):
+    async def run_direct(coro_or_factory, timeout_seconds=10.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "MemoryManager", Missing)

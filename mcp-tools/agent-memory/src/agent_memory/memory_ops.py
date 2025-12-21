@@ -5,14 +5,12 @@ Implements the business logic for reading, writing, and managing
 agent memory files according to the schema specification.
 """
 
-import os
 import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from .safety import (
-    MemorySafetyError,
     SchemaValidationError,
     ensure_memory_path,
     sanitize_content,
@@ -127,7 +125,7 @@ class MemoryManager:
             # Fall back to defaults if no sections found
             return sections if sections else DEFAULT_ALLOWED_SECTIONS
 
-        except Exception:
+        except (OSError, UnicodeError):
             return DEFAULT_ALLOWED_SECTIONS
 
     def _get_session_file_path(self, date: Optional[str] = None) -> Path:

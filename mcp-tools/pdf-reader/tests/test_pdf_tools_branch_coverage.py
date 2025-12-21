@@ -49,7 +49,8 @@ def test_tool_extract_pdf_content_validation_and_passthrough(monkeypatch):
 
 
 def test_tool_extract_pdf_content_exception_mapping(monkeypatch):
-    async def run_direct(coro, timeout_seconds=1.0):
+    async def run_direct(coro_or_factory, timeout_seconds=1.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "run_with_timeout", run_direct)
@@ -98,7 +99,8 @@ def test_tool_extract_pdf_content_exception_mapping(monkeypatch):
 
 
 def test_tool_list_pdf_pages_exception_mapping(monkeypatch):
-    async def run_direct(coro, timeout_seconds=1.0):
+    async def run_direct(coro_or_factory, timeout_seconds=1.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "run_with_timeout", run_direct)
@@ -123,7 +125,8 @@ def test_tool_get_pdf_metadata_validation_and_more_safety_mapping(monkeypatch):
     r = asyncio.run(tools.tool_get_pdf_metadata({}))
     assert r["code"] == "UserInput"
 
-    async def run_direct(coro, timeout_seconds=1.0):
+    async def run_direct(coro_or_factory, timeout_seconds=1.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "run_with_timeout", run_direct)
@@ -161,7 +164,8 @@ def test_tool_list_pdf_pages_validation_passthrough_and_more_safety(monkeypatch)
     r = asyncio.run(tools.tool_list_pdf_pages({"file_path": "/tmp/x.pdf"}))
     assert r["code"] == "Timeout"
 
-    async def run_direct(coro, timeout_seconds=1.0):
+    async def run_direct(coro_or_factory, timeout_seconds=1.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "run_with_timeout", run_direct)

@@ -22,7 +22,7 @@ dependencies = [
     # Core MCP server functionality
     "mcp>=1.0.0",
     # PDF processing libraries
-    "pypdf2>=3.0.0",
+    "pypdf>=5.0.0",
     "pdfplumber>=0.10.0",
     # Image processing for PDF images
     "pillow>=9.0.0",
@@ -103,7 +103,7 @@ strict_equality = true
 
 [[tool.mypy.overrides]]
 module = [
-    "PyPDF2.*",
+    "pypdf.*",
     "pdfplumber.*",
     "pandas.*",
     "mcp.*",

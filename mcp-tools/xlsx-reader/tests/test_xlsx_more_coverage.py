@@ -6,7 +6,6 @@ from pathlib import Path
 
 import openpyxl
 import pytest
-from PyPDF2 import PdfWriter  # noqa: F401
 
 from xlsx_reader import errors, safety
 from xlsx_reader.errors import (

@@ -33,6 +33,12 @@
 
 [Gates determined based on constitution file]
 
+At minimum for Python-only repos, include explicit gates for:
+
+- linting passes with zero errors
+- tests are present and meaningful
+- coverage requirements (if mandated by the repo)
+
 ## Project Structure
 
 ### Documentation (this feature)
@@ -57,7 +63,7 @@ specs/[###-feature]/
 
 ```text
 # [REMOVE IF UNUSED] Option 0: Tool monorepo (this repository)
-<tool-name>/
+mcp-tools/<tool-name>/
 ├── pyproject.toml
 ├── README.md
 ├── src/

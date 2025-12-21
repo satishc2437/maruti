@@ -49,7 +49,7 @@ uvx --from . python -m pdf_reader
 
 If you only want a throwaway run (tables optional):
 ```bash
-uvx pip install mcp PyPDF2 pdfplumber Pillow
+uvx pip install mcp pypdf pdfplumber Pillow
 uvx pip install pandas   # optional
 ```
 (This does NOT install your local source; you still need `--from .` to run project code.)

@@ -127,7 +127,8 @@ def test_tool_exception_falls_back_to_internal(monkeypatch, tmp_path):
         def start_session(self, *args, **kwargs):
             raise RuntimeError("boom")
 
-    async def run_direct(coro, timeout_seconds=10.0):
+    async def run_direct(coro_or_factory, timeout_seconds=10.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "MemoryManager", Manager)
@@ -148,7 +149,8 @@ def test_tool_append_entry_value_error_and_file_not_found(monkeypatch, tmp_path)
         def append_entry(self, *args, **kwargs):
             raise ValueError("bad")
 
-    async def run_direct(coro, timeout_seconds=10.0):
+    async def run_direct(coro_or_factory, timeout_seconds=10.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "MemoryManager", Manager)
@@ -181,7 +183,8 @@ def test_tool_update_summary_value_error(monkeypatch, tmp_path):
         def update_summary(self, *args, **kwargs):
             raise ValueError("bad")
 
-    async def run_direct(coro, timeout_seconds=10.0):
+    async def run_direct(coro_or_factory, timeout_seconds=10.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "MemoryManager", Manager)
@@ -208,7 +211,8 @@ def test_tool_read_and_list_file_not_found_and_internal(monkeypatch, tmp_path):
         def list_sessions(self, *args, **kwargs):
             raise RuntimeError("boom")
 
-    async def run_direct(coro, timeout_seconds=10.0):
+    async def run_direct(coro_or_factory, timeout_seconds=10.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "MemoryManager", Manager)

@@ -3,20 +3,16 @@ Core Excel workbook processing functionality.
 Handles reading, writing, and manipulating Excel workbooks using openpyxl.
 """
 
-import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 import openpyxl
 from openpyxl import Workbook
 from openpyxl.cell import Cell
-from openpyxl.formatting.rule import Rule
-from openpyxl.styles import Alignment, Border, Fill, Font, PatternFill
-from openpyxl.worksheet.datavalidation import DataValidation
-from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.styles import Alignment, Fill, Font
 
-from ..errors import ValidationError, WorkbookError, WorksheetError
+from ..errors import WorkbookError, WorksheetError
 from ..safety import validate_cell_reference, validate_excel_file, validate_sheet_name
 
 logger = logging.getLogger(__name__)
@@ -54,12 +50,12 @@ class ExcelProcessor:
                 data_only=False,  # Keep formulas
             )
 
-            logger.info(f"Loaded workbook: {validated_path}")
+            logger.info("Loaded workbook: %s", validated_path)
 
             return self.get_workbook_info()
 
         except Exception as e:
-            raise WorkbookError(f"Failed to load workbook: {e}")
+            raise WorkbookError(f"Failed to load workbook: {e}") from e
 
     def get_workbook_info(self) -> Dict[str, Any]:
         """
@@ -107,7 +103,7 @@ class ExcelProcessor:
             }
 
         except Exception as e:
-            raise WorkbookError(f"Failed to get workbook info: {e}")
+            raise WorkbookError(f"Failed to get workbook info: {e}") from e
 
     def get_worksheet_data(
         self,
@@ -213,7 +209,7 @@ class ExcelProcessor:
             }
 
         except Exception as e:
-            raise WorksheetError(f"Failed to read worksheet data: {e}")
+            raise WorksheetError(f"Failed to read worksheet data: {e}") from e
 
     def update_cell_value(
         self, sheet_name: str, cell_ref: str, value: Any, formula: Optional[str] = None
@@ -259,7 +255,7 @@ class ExcelProcessor:
             }
 
         except Exception as e:
-            raise WorksheetError(f"Failed to update cell: {e}")
+            raise WorksheetError(f"Failed to update cell: {e}") from e
 
     def update_cell_range(
         self, sheet_name: str, cell_range: str, values: List[List[Any]]
@@ -315,7 +311,7 @@ class ExcelProcessor:
             }
 
         except Exception as e:
-            raise WorksheetError(f"Failed to update cell range: {e}")
+            raise WorksheetError(f"Failed to update cell range: {e}") from e
 
     def add_worksheet(
         self, sheet_name: str, index: Optional[int] = None
@@ -351,7 +347,7 @@ class ExcelProcessor:
             }
 
         except Exception as e:
-            raise WorksheetError(f"Failed to add worksheet: {e}")
+            raise WorksheetError(f"Failed to add worksheet: {e}") from e
 
     def delete_worksheet(self, sheet_name: str) -> Dict[str, Any]:
         """
@@ -388,7 +384,7 @@ class ExcelProcessor:
             }
 
         except Exception as e:
-            raise WorksheetError(f"Failed to delete worksheet: {e}")
+            raise WorksheetError(f"Failed to delete worksheet: {e}") from e
 
     def save_workbook(self, file_path: Optional[str] = None) -> Dict[str, Any]:
         """
@@ -423,7 +419,7 @@ class ExcelProcessor:
             }
 
         except Exception as e:
-            raise WorkbookError(f"Failed to save workbook: {e}")
+            raise WorkbookError(f"Failed to save workbook: {e}") from e
 
     def close_workbook(self) -> None:
         """Close the current workbook and free resources."""

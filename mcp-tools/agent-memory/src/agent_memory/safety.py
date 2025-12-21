@@ -12,22 +12,22 @@ from typing import Union
 
 class MemorySafetyError(Exception):
     """Base exception for memory safety violations."""
-    pass
+
 
 
 class PathTraversalError(MemorySafetyError):
     """Raised when path attempts to escape repository root."""
-    pass
+
 
 
 class InvalidRepositoryError(MemorySafetyError):
     """Raised when repository root is invalid or inaccessible."""
-    pass
+
 
 
 class SchemaValidationError(MemorySafetyError):
     """Raised when memory entry doesn't conform to schema."""
-    pass
+
 
 
 def validate_repository_root(repo_root: Union[str, Path]) -> Path:
@@ -128,8 +128,8 @@ def validate_date_format(date_str: str) -> str:
     # Validate actual date
     try:
         datetime.strptime(date_str, '%Y-%m-%d')
-    except ValueError:
-        raise ValueError(f"Invalid date: {date_str}")
+    except ValueError as exc:
+        raise ValueError(f"Invalid date: {date_str}") from exc
 
     return date_str
 
@@ -181,7 +181,7 @@ def ensure_memory_path(repo_root: Path, agent_name: str) -> Path:
 
         return memory_path
     except (OSError, PermissionError) as e:
-        raise MemorySafetyError(f"Cannot create memory directory: {e}")
+        raise MemorySafetyError(f"Cannot create memory directory: {e}") from e
 
 
 def get_safe_file_info(file_path: Path) -> dict:

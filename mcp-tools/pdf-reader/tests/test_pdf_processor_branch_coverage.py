@@ -4,7 +4,7 @@ import importlib.util
 from pathlib import Path
 
 import pytest
-from PyPDF2 import PdfWriter
+from pypdf import PdfWriter
 
 from pdf_reader import pdf_processor as pdf_processor_module
 
@@ -19,7 +19,7 @@ def _create_minimal_pdf(path: Path) -> None:
 def test_pdf_processor_import_error_branches(tmp_path):
     processor_path = Path(pdf_processor_module.__file__)
 
-    # 1) Cover the required-imports ImportError branch (PyPDF2/pdfplumber/PIL)
+    # 1) Cover the required-imports ImportError branch (pypdf/pdfplumber/PIL)
     spec = importlib.util.spec_from_file_location("pdf_reader._pdf_processor_blocked", processor_path)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
@@ -27,7 +27,7 @@ def test_pdf_processor_import_error_branches(tmp_path):
     orig_import = builtins.__import__
 
     def block_core_imports(name, globals=None, locals=None, fromlist=(), level=0):
-        if name in {"PyPDF2", "pdfplumber", "PIL"} or name.startswith("PIL"):
+        if name in {"pypdf", "pdfplumber", "PIL"} or name.startswith("PIL"):
             raise ImportError("blocked")
         return orig_import(name, globals, locals, fromlist, level)
 
@@ -133,7 +133,7 @@ def test_extract_images_continue_and_filter_fallthroughs(monkeypatch, tmp_path):
         def __init__(self, _file):
             self.pages = [Page()]
 
-    monkeypatch.setattr(pdf_processor_module.PyPDF2, "PdfReader", FakeReader)
+    monkeypatch.setattr(pdf_processor_module.pypdf, "PdfReader", FakeReader)
 
     proc = pdf_processor_module.PDFProcessor()
     result = {"images": []}
@@ -216,7 +216,7 @@ def test_stream_content_extraction_image_counting_missing_xobject(monkeypatch, t
             self.pages = [ReaderPage()]
 
     monkeypatch.setattr(pdf_processor_module, "pdfplumber", type("X", (), {"open": lambda *_a, **_k: FakePDF()})())
-    monkeypatch.setattr(pdf_processor_module.PyPDF2, "PdfReader", FakeReader)
+    monkeypatch.setattr(pdf_processor_module.pypdf, "PdfReader", FakeReader)
 
     proc = pdf_processor_module.PDFProcessor()
 
@@ -274,7 +274,7 @@ def test_stream_content_extraction_image_counting_non_image_subtype(monkeypatch,
             self.pages = [ReaderPage()]
 
     monkeypatch.setattr(pdf_processor_module, "pdfplumber", type("X", (), {"open": lambda *_a, **_k: FakePDF()})())
-    monkeypatch.setattr(pdf_processor_module.PyPDF2, "PdfReader", FakeReader)
+    monkeypatch.setattr(pdf_processor_module.pypdf, "PdfReader", FakeReader)
 
     proc = pdf_processor_module.PDFProcessor()
 

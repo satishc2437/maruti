@@ -4,14 +4,10 @@
 These tests validate core workbook operations and error handling.
 """
 
-import json
+import asyncio
 import logging
-import sys
 import tempfile
 from pathlib import Path
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from xlsx_reader.errors import success_response, user_input_error
 from xlsx_reader.processors.exporters import DataExporter
@@ -54,7 +50,7 @@ def create_sample_workbook():
     return wb
 
 
-def test_workbook_operations(tmp_path):
+def test_workbook_operations(tmp_path: Path):
     """Test core workbook operations."""
     logger.info("Testing Excel workbook operations...")
 
@@ -100,7 +96,7 @@ def test_workbook_operations(tmp_path):
     processor.close_workbook()
 
 
-def test_error_handling():
+def test_error_handling() -> None:
     """Test error handling functionality."""
     logger.info("Testing error handling...")
 
@@ -111,8 +107,8 @@ def test_error_handling():
     try:
         processor.load_workbook("/nonexistent/file.xlsx")
         assert False, "Should have raised an exception"
-    except Exception as e:
-        logger.info(f"✓ Correctly handled invalid file path: {type(e).__name__}")
+    except Exception as e:  # pylint: disable=broad-except
+        logger.info("✓ Correctly handled invalid file path: %s", type(e).__name__)
 
     # Test 2: Invalid sheet name
     try:
@@ -125,23 +121,23 @@ def test_error_handling():
             processor.load_workbook(tmp.name, read_only=True)
             processor.get_worksheet_data("NonExistentSheet")
             assert False, "Should have raised an exception"
-    except Exception as e:
-        logger.info(f"✓ Correctly handled invalid sheet name: {type(e).__name__}")
+    except Exception as e:  # pylint: disable=broad-except
+        logger.info("✓ Correctly handled invalid sheet name: %s", type(e).__name__)
     finally:
         processor.close_workbook()
         try:
             Path(tmp.name).unlink()
-        except Exception:
+        except OSError:
             pass
 
     # Test 3: Error response functions
     error_resp = user_input_error("Test error", hint="Test hint")
-    assert error_resp["ok"] == False
+    assert error_resp["ok"] is False
     assert error_resp["code"] == "UserInput"
     logger.info("✓ Error response functions work correctly")
 
     success_resp = success_response({"test": "data"})
-    assert success_resp["ok"] == True
+    assert success_resp["ok"] is True
     assert success_resp["data"]["test"] == "data"
     logger.info("✓ Success response functions work correctly")
 
@@ -212,25 +208,22 @@ async def main():
     print("\nRunning functionality tests...")
     print("-" * 40)
 
-    # Run tests
-    workbook_test_passed = await test_workbook_operations()
-    test_error_handling()
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_path = Path(tmp_dir)
+        test_workbook_operations(tmp_path)
+        test_error_handling()
 
     print("\n" + "-" * 40)
-    if workbook_test_passed:
-        print("🎉 ALL TESTS PASSED!")
-        print("\nThe Excel Reader MCP server is ready to use!")
-        print("\nTo start the server from maruti project root:")
-        print("  cd mcp-tools/xlsx-reader")
-        print("  uv pip install -e .")
-        print("  python -m xlsx_reader")
-    else:
-        print("❌ Some tests failed. Check the logs above for details.")
-        return 1
+    print("🎉 ALL TESTS PASSED!")
+    print("\nThe Excel Reader MCP server is ready to use!")
+    print("\nTo start the server from maruti project root:")
+    print("  cd mcp-tools/xlsx-reader")
+    print("  uv pip install -e .")
+    print("  python -m xlsx_reader")
 
     return 0
 
 
 if __name__ == "__main__":
     exit_code = asyncio.run(main())
-    sys.exit(exit_code)
+    raise SystemExit(exit_code)

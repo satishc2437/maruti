@@ -2,7 +2,7 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from PyPDF2 import PdfWriter
+from pypdf import PdfWriter
 
 from pdf_reader import pdf_processor as pdf_processor_module
 from pdf_reader import safety, tools

@@ -7,10 +7,10 @@ validation, error handling, and MCP-compatible interfaces.
 
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from collections.abc import Awaitable, Callable
+from typing import Any, Dict
 
 from .errors import (
-    cancellation_error,
     forbidden_error,
     internal_error,
     not_found_error,
@@ -262,9 +262,13 @@ def validate_list_sessions_params(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-async def run_with_timeout(coro, timeout_seconds: float = 10.0):
-    """Run coroutine with timeout protection."""
+async def run_with_timeout(
+    coro_or_factory: Awaitable[Any] | Callable[[], Awaitable[Any]],
+    timeout_seconds: float = 10.0,
+):
+    """Run an awaitable (or awaitable factory) with timeout protection."""
     try:
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await asyncio.wait_for(coro, timeout=timeout_seconds)
     except asyncio.TimeoutError:
         return timeout_error(f"Operation exceeded {timeout_seconds:.1f}s limit")
@@ -284,7 +288,7 @@ async def tool_start_session(params: Dict[str, Any]) -> Dict[str, Any]:
             manager = MemoryManager(validated["repo_root"], validated["agent_name"])
             return manager.start_session(validated["date"])
 
-        result = await run_with_timeout(start_operation(), timeout_seconds=10.0)
+        result = await run_with_timeout(start_operation, timeout_seconds=10.0)
 
         if isinstance(result, dict) and not result.get("ok", True):
             return result  # Already an error response
@@ -300,7 +304,7 @@ async def tool_start_session(params: Dict[str, Any]) -> Dict[str, Any]:
             return forbidden_error(str(e))
     except FileNotFoundError as e:
         return not_found_error(str(e))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return internal_error("Failed to start session", detail=str(e))
 
 
@@ -322,7 +326,7 @@ async def tool_append_entry(params: Dict[str, Any]) -> Dict[str, Any]:
                 validated["date"]
             )
 
-        result = await run_with_timeout(append_operation(), timeout_seconds=10.0)
+        result = await run_with_timeout(append_operation, timeout_seconds=10.0)
 
         if isinstance(result, dict) and not result.get("ok", True):
             return result  # Already an error response
@@ -342,7 +346,7 @@ async def tool_append_entry(params: Dict[str, Any]) -> Dict[str, Any]:
         return user_input_error(str(e), hint="Check section name and date format")
     except FileNotFoundError as e:
         return not_found_error(str(e))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return internal_error("Failed to append entry", detail=str(e))
 
 
@@ -360,7 +364,7 @@ async def tool_read_summary(params: Dict[str, Any]) -> Dict[str, Any]:
             manager = MemoryManager(validated["repo_root"], validated["agent_name"])
             return manager.read_summary()
 
-        result = await run_with_timeout(read_operation(), timeout_seconds=10.0)
+        result = await run_with_timeout(read_operation, timeout_seconds=10.0)
 
         if isinstance(result, dict) and not result.get("ok", True):
             return result  # Already an error response
@@ -376,7 +380,7 @@ async def tool_read_summary(params: Dict[str, Any]) -> Dict[str, Any]:
             return forbidden_error(str(e))
     except FileNotFoundError as e:
         return not_found_error(str(e))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return internal_error("Failed to read summary", detail=str(e))
 
 
@@ -398,7 +402,7 @@ async def tool_update_summary(params: Dict[str, Any]) -> Dict[str, Any]:
                 validated["mode"]
             )
 
-        result = await run_with_timeout(update_operation(), timeout_seconds=10.0)
+        result = await run_with_timeout(update_operation, timeout_seconds=10.0)
 
         if isinstance(result, dict) and not result.get("ok", True):
             return result  # Already an error response
@@ -416,7 +420,7 @@ async def tool_update_summary(params: Dict[str, Any]) -> Dict[str, Any]:
         return user_input_error(str(e), hint="Check section name and mode parameter")
     except FileNotFoundError as e:
         return not_found_error(str(e))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return internal_error("Failed to update summary", detail=str(e))
 
 
@@ -434,7 +438,7 @@ async def tool_list_sessions(params: Dict[str, Any]) -> Dict[str, Any]:
             manager = MemoryManager(validated["repo_root"], validated["agent_name"])
             return manager.list_sessions(validated["limit"])
 
-        result = await run_with_timeout(list_operation(), timeout_seconds=10.0)
+        result = await run_with_timeout(list_operation, timeout_seconds=10.0)
 
         if isinstance(result, dict) and not result.get("ok", True):
             return result  # Already an error response
@@ -450,5 +454,5 @@ async def tool_list_sessions(params: Dict[str, Any]) -> Dict[str, Any]:
             return forbidden_error(str(e))
     except FileNotFoundError as e:
         return not_found_error(str(e))
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         return internal_error("Failed to list sessions", detail=str(e))

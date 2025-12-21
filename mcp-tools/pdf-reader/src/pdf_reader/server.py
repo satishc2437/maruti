@@ -7,25 +7,25 @@ and JSON-RPC communication over stdio.
 
 import asyncio
 import json
-import sys
 import logging
+import sys
 from typing import Any, Dict, List
 
 # MCP imports
 try:
     from mcp.server import Server
-    from mcp.types import Tool, Resource, TextContent
+    from mcp.types import Resource, TextContent, Tool
 except ImportError:
     raise ImportError("MCP library not installed. Install with: pip install mcp")
 
+from .safety import check_ocr_available
 from .tools import (
     TOOL_METADATA,
     tool_extract_pdf_content,
-    tool_get_pdf_metadata, 
+    tool_get_pdf_metadata,
     tool_list_pdf_pages,
-    tool_stream_pdf_extraction
+    tool_stream_pdf_extraction,
 )
-from .safety import check_ocr_available
 
 # Set up logging
 logging.basicConfig(
@@ -43,7 +43,7 @@ server = Server("pdf-reader")
 async def list_tools() -> list[Tool]:
     """List all available PDF processing tools."""
     tools = []
-    
+
     for tool_name, metadata in TOOL_METADATA.items():
         tool = Tool(
             name=tool_name,
@@ -51,7 +51,7 @@ async def list_tools() -> list[Tool]:
             inputSchema=metadata["inputSchema"]
         )
         tools.append(tool)
-    
+
     logger.info(f"Listed {len(tools)} PDF processing tools")
     return tools
 
@@ -132,7 +132,7 @@ async def list_resources() -> list[Resource]:
             description="Current server status and configuration"
         )
     ]
-    
+
     logger.info(f"Listed {len(resources)} resources")
     return resources
 
@@ -141,7 +141,7 @@ async def list_resources() -> list[Resource]:
 async def read_resource(uri: str) -> str:
     """Read resource content."""
     logger.info(f"Resource requested: {uri}")
-    
+
     if uri == "pdf://supported-features":
         features = {
             "text_extraction": True,
@@ -153,7 +153,7 @@ async def read_resource(uri: str) -> str:
             "supported_formats": [".pdf"],
             "max_file_size_mb": 100,
             "dependencies": {
-                "PyPDF2": "Basic PDF reading",
+                "pypdf": "Basic PDF reading",
                 "pdfplumber": "Advanced text and table extraction",
                 "Pillow": "Image processing",
                 "pandas": "Table data processing"
@@ -166,7 +166,7 @@ async def read_resource(uri: str) -> str:
             ]
         }
         return json.dumps(features, indent=2)
-    
+
     elif uri == "pdf://server-status":
         status = {
             "server_name": "PDF Reader MCP Server",
@@ -183,7 +183,7 @@ async def read_resource(uri: str) -> str:
             ]
         }
         return json.dumps(status, indent=2)
-    
+
     else:
         raise ValueError(f"Unknown resource URI: {uri}")
 
@@ -191,29 +191,29 @@ async def read_resource(uri: str) -> str:
 async def run_server():
     """Run the PDF Reader MCP Server."""
     logger.info("Starting PDF Reader MCP Server...")
-    
+
     # Check dependencies
     try:
-        import PyPDF2
         import pdfplumber
+        import pypdf
         from PIL import Image
         logger.info("Core PDF processing libraries loaded successfully")
     except ImportError as e:
         logger.error(f"Missing required dependency: {e}")
         logger.error("Install dependencies with: pip install -r requirements.txt")
         sys.exit(1)
-    
+
     # Check OCR availability
     ocr_status = "available" if check_ocr_available() else "not available"
     logger.info(f"OCR support: {ocr_status}")
-    
+
     # Log available tools
     logger.info(f"Registered tools: {', '.join(TOOL_METADATA.keys())}")
-    
+
     try:
         # Run server with stdio transport
         from mcp.server.stdio import stdio_server
-        
+
         logger.info("PDF Reader MCP Server ready for connections")
         async with stdio_server() as (read_stream, write_stream):
             await server.run(
@@ -221,7 +221,7 @@ async def run_server():
                 write_stream,
                 server.create_initialization_options()
             )
-            
+
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
     except Exception as e:
@@ -233,19 +233,19 @@ async def run_server():
 async def test_server():
     """Simple test function for development."""
     logger.info("Running server tests...")
-    
+
     # Test tool listing
     tools = await list_tools()
     print(f"Available tools: {[t.name for t in tools]}")
-    
+
     # Test resource listing
     resources = await list_resources()
     print(f"Available resources: {[r.name for r in resources]}")
-    
+
     # Test resource reading
     status = await read_resource("pdf://server-status")
     print(f"Server status: {status}")
-    
+
     logger.info("Server tests completed")
 
 

@@ -2,7 +2,7 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from PyPDF2 import PdfWriter
+from pypdf import PdfWriter
 
 from pdf_reader import errors
 from pdf_reader import pdf_processor as pdf_processor_module
@@ -108,7 +108,8 @@ def test_tools_error_mapping_and_passthrough(monkeypatch, tmp_path):
     assert r["code"] == "Timeout"
 
     # Tool-level exception mapping
-    async def run_direct(coro, timeout_seconds=1.0):
+    async def run_direct(coro_or_factory, timeout_seconds=1.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "run_with_timeout", run_direct)
@@ -146,7 +147,8 @@ def test_tools_extract_and_list_error_branches(monkeypatch, tmp_path):
     pdf = tmp_path / "a.pdf"
     _create_minimal_pdf(pdf)
 
-    async def run_direct(coro, timeout_seconds=1.0):
+    async def run_direct(coro_or_factory, timeout_seconds=1.0):
+        coro = coro_or_factory() if callable(coro_or_factory) else coro_or_factory
         return await coro
 
     monkeypatch.setattr(tools, "run_with_timeout", run_direct)
@@ -282,7 +284,7 @@ def test_pdf_processor_image_extraction_branches(monkeypatch, tmp_path):
             self.is_encrypted = False
             self.metadata = {"/Title": "t"}
 
-    monkeypatch.setattr(pdf_processor_module.PyPDF2, "PdfReader", FakeReader)
+    monkeypatch.setattr(pdf_processor_module.pypdf, "PdfReader", FakeReader)
 
     class FakePDFPage:
         bbox = (0, 0, 10, 10)
@@ -319,7 +321,7 @@ def test_pdf_processor_extract_metadata_exception_branch(monkeypatch, tmp_path):
         def __init__(self, _file):
             raise RuntimeError("boom")
 
-    monkeypatch.setattr(pdf_processor_module.PyPDF2, "PdfReader", BoomReader)
+    monkeypatch.setattr(pdf_processor_module.pypdf, "PdfReader", BoomReader)
     proc = pdf_processor_module.PDFProcessor()
     with pytest.raises(RuntimeError):
         asyncio.run(proc.extract_metadata(str(pdf)))
@@ -369,7 +371,7 @@ def test_pdf_processor_extract_images_inner_and_outer_errors(monkeypatch, tmp_pa
         def __init__(self, _file):
             self.pages = [FakePage()]
 
-    monkeypatch.setattr(pdf_processor_module.PyPDF2, "PdfReader", FakeReader)
+    monkeypatch.setattr(pdf_processor_module.pypdf, "PdfReader", FakeReader)
 
     proc = pdf_processor_module.PDFProcessor()
     result = {"images": []}
@@ -429,7 +431,7 @@ def test_stream_content_extraction_include_images_and_tables(monkeypatch, tmp_pa
             self.metadata = None
 
     monkeypatch.setattr(pdf_processor_module, "pdfplumber", type("X", (), {"open": lambda *_a, **_k: FakePDF()})())
-    monkeypatch.setattr(pdf_processor_module.PyPDF2, "PdfReader", FakeReader)
+    monkeypatch.setattr(pdf_processor_module.pypdf, "PdfReader", FakeReader)
 
     events = []
 

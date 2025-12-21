@@ -98,7 +98,7 @@ This repo is a `uv` workspace (multiple independent Python projects under `mcp-t
   uv run pytest -q
   ```
 
-- If you run `uv sync` at the repo root *without* `--all-packages`, `uv` may remove dependencies that belong to individual tools (because it is syncing the environment to just the root project). That can lead to import errors like missing `openpyxl`, `mcp`, `pypdf2/PyPDF2`, or tool packages such as `pdf_reader`.
+- If you run `uv sync` at the repo root *without* `--all-packages`, `uv` may remove dependencies that belong to individual tools (because it is syncing the environment to just the root project). That can lead to import errors like missing `openpyxl`, `mcp`, `pypdf`, or tool packages such as `pdf_reader`.
 
 - For per-tool work, `cd mcp-tools/<tool>` and run:
 

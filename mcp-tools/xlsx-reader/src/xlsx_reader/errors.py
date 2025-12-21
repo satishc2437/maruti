@@ -52,7 +52,7 @@ def internal_error(
     error = {"ok": False, "code": "Internal", "message": message}
     if detail:
         error["detail"] = detail[:160]  # Truncate long details
-        logger.error(f"Internal error: {message} - {detail}")
+        logger.error("Internal error: %s - %s", message, detail)
     if kwargs:
         error.update(kwargs)
     return error
@@ -77,13 +77,11 @@ def success_response(data: Any, **kwargs) -> Dict[str, Any]:
 class ExcelProcessingError(Exception):
     """Base exception for Excel processing errors."""
 
-    pass
 
 
 class FileAccessError(ExcelProcessingError):
     """Raised when file access is denied or fails."""
 
-    pass
 
 
 class ValidationError(ExcelProcessingError):
@@ -99,22 +97,18 @@ class ValidationError(ExcelProcessingError):
 class WorkbookError(ExcelProcessingError):
     """Raised when workbook operations fail."""
 
-    pass
 
 
 class WorksheetError(ExcelProcessingError):
     """Raised when worksheet operations fail."""
 
-    pass
 
 
 class ChartError(ExcelProcessingError):
     """Raised when chart operations fail."""
 
-    pass
 
 
 class PivotTableError(ExcelProcessingError):
     """Raised when pivot table operations fail."""
 
-    pass

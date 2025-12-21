@@ -23,7 +23,7 @@ description: "Task list template for feature implementation"
 - **Single project**: `src/`, `tests/` at repository root
 - **Web app**: `backend/src/`, `frontend/src/`
 - **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- **Tool monorepo (this repo)**: `<tool-name>/src/`, `<tool-name>/tests/` (each tool is self-contained)
+- **Tool monorepo (this repo)**: `mcp-tools/<tool-name>/src/`, `mcp-tools/<tool-name>/tests/` (each tool is self-contained)
 - Paths shown below assume single project - adjust based on plan.md structure
 
 <!--
@@ -51,7 +51,7 @@ description: "Task list template for feature implementation"
 
 - [ ] T001 Create project structure per implementation plan
 - [ ] T002 Initialize [language] project with [framework] dependencies
-- [ ] T003 [P] Configure linting and formatting tools
+- [ ] T003 [P] Configure linting and formatting tools (lint must pass with zero errors)
 
 ---
 

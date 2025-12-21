@@ -4,16 +4,9 @@ Basic functionality test for Agent Memory MCP Server.
 Tests core memory operations without requiring MCP framework.
 """
 
-import os
-import sys
 import tempfile
-from pathlib import Path
 
 import pytest
-
-# Allow running tests without installing the package (e.g., `python test_basic.py`).
-# Under normal workflows (uv workspace / devcontainer), the package is installed and importable.
-sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from agent_memory import memory_ops, safety
 

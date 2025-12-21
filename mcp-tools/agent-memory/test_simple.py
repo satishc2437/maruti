@@ -4,16 +4,9 @@ Simple test for Agent Memory core functionality.
 Tests individual modules directly to avoid MCP dependency.
 """
 
-import os
-import sys
 import tempfile
-from pathlib import Path
 
 import pytest
-
-# Allow running tests without installing the package (e.g., `python test_simple.py`).
-# Under normal workflows (uv workspace / devcontainer), the package is installed and importable.
-sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from agent_memory import memory_ops, safety
 
@@ -62,10 +55,11 @@ def test_schema_validation():
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = memory_ops.MemoryManager(temp_dir, "test_agent")
 
-        allowed_sections = manager._get_allowed_sections()
-        assert "Context" in allowed_sections
+        # Valid sections should be accepted.
+        result = manager.append_entry("Context", "Test content")
+        assert result["ok"] is True
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             manager.append_entry("InvalidSection", "Test content")
 
 if __name__ == "__main__":
@@ -75,7 +69,7 @@ if __name__ == "__main__":
         test_safety_functions()
         test_memory_manager()
         test_schema_validation()
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         print("❌ SOME TESTS FAILED!")
         raise
     else:

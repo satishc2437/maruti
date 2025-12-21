@@ -29,7 +29,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 
 # Or install core dependencies from PyPI
-uv add mcp PyPDF2 pdfplumber Pillow
+uv add mcp pypdf pdfplumber Pillow
 
 # Optional: Add table extraction support (may fail on some systems)
 uv add --optional tables pandas
@@ -39,7 +39,7 @@ uv add --optional tables pandas
 
 **Core Dependencies:**
 - `mcp>=1.0.0` - MCP server framework
-- `PyPDF2>=3.0.0` - Basic PDF processing
+- `pypdf>=5.0.0` - Basic PDF processing
 - `pdfplumber>=0.10.0` - Advanced text and table extraction
 - `Pillow>=9.0.0` - Image processing
 
