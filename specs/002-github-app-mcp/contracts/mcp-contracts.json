@@ -1,0 +1,320 @@
+{
+  "contract_version": "1",
+  "tool": "github-app-mcp",
+  "date": "2025-12-22",
+  "allow_listed_operations": [
+    "get_repository",
+    "list_branches",
+    "get_file",
+    "list_pull_requests",
+    "list_issues",
+    "create_branch",
+    "commit_changes",
+    "open_pull_request",
+    "comment_on_issue"
+  ],
+  "invariants": [
+    "No secrets are returned to the agent (private keys, JWTs, installation tokens, installation IDs).",
+    "Only allow-listed high-level operations are supported (no arbitrary GitHub API passthrough).",
+    "Every operation returns a correlation_id for audit traceability."
+  ],
+  "tools": [
+    {
+      "name": "get_repository",
+      "description": "Read repository metadata within the GitHub App installation scope.",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner", "repo"],
+        "properties": {
+          "owner": {"type": "string", "minLength": 1},
+          "repo": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "repository"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "repository": {"type": "object"}
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_branches",
+      "description": "List branches in a repository within the GitHub App installation scope.",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner", "repo"],
+        "properties": {
+          "owner": {"type": "string", "minLength": 1},
+          "repo": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "branches"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "default_branch": {"type": "string"},
+          "branches": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_file",
+      "description": "Read a single file at a given ref. Responses are size-limited and must not include secrets.",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner", "repo", "path"],
+        "properties": {
+          "owner": {"type": "string", "minLength": 1},
+          "repo": {"type": "string", "minLength": 1},
+          "path": {"type": "string", "minLength": 1},
+          "ref": {"type": "string", "description": "Branch, tag, or SHA"}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "file"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "file": {
+            "type": "object",
+            "required": ["path", "content"],
+            "properties": {
+              "path": {"type": "string"},
+              "ref": {"type": "string"},
+              "content": {"type": "string"},
+              "encoding": {"type": "string", "enum": ["utf-8", "base64"]}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_pull_requests",
+      "description": "List pull requests for a repository (basic fields only).",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner", "repo"],
+        "properties": {
+          "owner": {"type": "string", "minLength": 1},
+          "repo": {"type": "string", "minLength": 1},
+          "state": {"type": "string", "enum": ["open", "closed", "all"], "default": "open"}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "pull_requests"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "pull_requests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["number", "url"],
+              "properties": {
+                "number": {"type": "integer"},
+                "url": {"type": "string"}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_issues",
+      "description": "List issues for a repository (basic fields only).",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner", "repo"],
+        "properties": {
+          "owner": {"type": "string", "minLength": 1},
+          "repo": {"type": "string", "minLength": 1},
+          "state": {"type": "string", "enum": ["open", "closed", "all"], "default": "open"}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "issues"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["number", "url"],
+              "properties": {
+                "number": {"type": "integer"},
+                "url": {"type": "string"}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_branch",
+      "description": "Create a new branch from a base ref/sha within an allowed repository.",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner", "repo", "base", "branch"],
+        "properties": {
+          "owner": {"type": "string", "minLength": 1},
+          "repo": {"type": "string", "minLength": 1},
+          "base": {"type": "string", "minLength": 1, "description": "Base branch name or commit SHA"},
+          "branch": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "ref"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "ref": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "commit_changes",
+      "description": "Create a single commit on a target branch from a set of file changes, subject to policy guardrails.",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner", "repo", "branch", "message", "changes"],
+        "properties": {
+          "owner": {"type": "string", "minLength": 1},
+          "repo": {"type": "string", "minLength": 1},
+          "branch": {"type": "string", "minLength": 1},
+          "message": {"type": "string", "minLength": 1},
+          "changes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["path", "action"],
+              "properties": {
+                "path": {"type": "string", "minLength": 1},
+                "action": {"type": "string", "enum": ["upsert", "delete"]},
+                "content": {"type": "string", "description": "File content for upsert (text)."},
+                "encoding": {"type": "string", "enum": ["utf-8", "base64"], "default": "utf-8"}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "commit"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "commit": {
+            "type": "object",
+            "required": ["sha"],
+            "properties": {
+              "sha": {"type": "string"},
+              "url": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "open_pull_request",
+      "description": "Open a pull request from a head branch to a base branch within policy.",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner", "repo", "title", "head", "base"],
+        "properties": {
+          "owner": {"type": "string", "minLength": 1},
+          "repo": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "body": {"type": "string"},
+          "head": {"type": "string", "minLength": 1},
+          "base": {"type": "string", "minLength": 1},
+          "draft": {"type": "boolean", "default": false}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "pull_request"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "pull_request": {
+            "type": "object",
+            "required": ["number", "url"],
+            "properties": {
+              "number": {"type": "integer"},
+              "url": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "comment_on_issue",
+      "description": "Add a comment to an issue or pull request.",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner", "repo", "issue_number", "body"],
+        "properties": {
+          "owner": {"type": "string", "minLength": 1},
+          "repo": {"type": "string", "minLength": 1},
+          "issue_number": {"type": "integer", "minimum": 1},
+          "body": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "comment"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "comment": {
+            "type": "object",
+            "required": ["id", "url"],
+            "properties": {
+              "id": {"type": "integer"},
+              "url": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ]
+}
