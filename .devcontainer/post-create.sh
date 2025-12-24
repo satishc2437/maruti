@@ -17,6 +17,8 @@ uv sync --dev
 # Auto-discover and install all MCP servers in editable mode
 echo "🔧 Auto-discovering and installing MCP servers..."
 mcp_count=0
+failed_count=0
+failed_tools=()
 for dir in mcp-tools/*/; do
     # Check if directory contains a pyproject.toml with MCP-related content
     if [ -f "${dir}pyproject.toml" ]; then
@@ -24,9 +26,14 @@ for dir in mcp-tools/*/; do
             tool_name="${dir#mcp-tools/}"
             tool_name="${tool_name%/}"
             echo "  📦 Installing MCP server: ${tool_name}"
-            cd "$dir" && uv pip install -e . && cd - >/dev/null
-            echo "  ✅ ${tool_name} installed successfully"
-            ((mcp_count++))
+            if (cd "$dir" && uv pip install -e .); then
+                echo "  ✅ ${tool_name} installed successfully"
+                ((++mcp_count))
+            else
+                echo "  ❌ Failed to install MCP server: ${tool_name}" >&2
+                failed_tools+=("${tool_name}")
+                ((++failed_count))
+            fi
         fi
     fi
 done
@@ -35,6 +42,13 @@ if [ $mcp_count -eq 0 ]; then
     echo "  ⚠️  No MCP servers found to install"
 else
     echo "  🎉 Successfully installed $mcp_count MCP server(s)"
+fi
+
+if [ $failed_count -gt 0 ]; then
+    echo "  ⚠️  $failed_count MCP server(s) failed to install:" >&2
+    for tool in "${failed_tools[@]}"; do
+        echo "     - ${tool}" >&2
+    done
 fi
 
 # Set up git safe directory
