@@ -37,5 +37,8 @@ Thumbs.db
 *.swp
 .cache/
 
+# Environment files
+.env*
+
 # Node (just in case)
 node_modules/

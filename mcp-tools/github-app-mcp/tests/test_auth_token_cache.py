@@ -31,7 +31,7 @@ def _cfg(tmp_path: Path) -> AppConfig:
         app_id=1,
         installation_id=2,
         private_key_path=_write_test_key(tmp_path),
-        policy=PolicyConfig(allowed_repos=frozenset(), pr_only=False, protected_branches=()),
+        policy=PolicyConfig(allowed_repos=frozenset(), allowed_projects=frozenset(), pr_only=False, protected_branches=()),
         audit_log_path=None,
         audit_max_bytes=5 * 1024 * 1024,
         audit_max_backups=2,
@@ -43,7 +43,7 @@ def _cfg(tmp_path: Path) -> AppConfig:
 async def test_installation_token_is_cached_when_not_near_expiry(tmp_path: Path) -> None:
     calls = {"n": 0}
 
-    def handler(request: httpx.Request) -> httpx.Response:
+    def handler(_request: httpx.Request) -> httpx.Response:
         calls["n"] += 1
         expires = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat().replace("+00:00", "Z")
         return httpx.Response(201, json={"token": f"t{calls['n']}", "expires_at": expires})
@@ -62,7 +62,7 @@ async def test_installation_token_is_cached_when_not_near_expiry(tmp_path: Path)
 async def test_installation_token_refreshes_when_near_expiry(tmp_path: Path) -> None:
     calls = {"n": 0}
 
-    def handler(request: httpx.Request) -> httpx.Response:
+    def handler(_request: httpx.Request) -> httpx.Response:
         calls["n"] += 1
         expires = (datetime.now(timezone.utc) + timedelta(seconds=10)).isoformat().replace("+00:00", "Z")
         return httpx.Response(201, json={"token": f"t{calls['n']}", "expires_at": expires})

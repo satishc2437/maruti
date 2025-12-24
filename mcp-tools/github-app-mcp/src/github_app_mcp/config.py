@@ -19,6 +19,7 @@ class PolicyConfig:
     """Policy guardrails configuration."""
 
     allowed_repos: frozenset[str]
+    allowed_projects: frozenset[str]
     pr_only: bool
     protected_branches: tuple[str, ...]
 
@@ -41,6 +42,9 @@ class LimitsConfig:
     commit_max_file_bytes: int = 50 * 1024
     commit_max_total_bytes: int = 200 * 1024
     get_file_max_bytes: int = 100 * 1024
+
+    issue_title_max_bytes: int = 512
+    issue_body_max_bytes: int = 50 * 1024
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,6 +75,38 @@ def _parse_allowed_repos(value: str | None) -> frozenset[str]:
     parts = [p.strip() for p in value.split(",")]
     repos = [p for p in parts if p]
     return frozenset(repos)
+
+
+def _parse_allowed_projects(value: str | None) -> frozenset[str]:
+    """Parse `GITHUB_APP_MCP_ALLOWED_PROJECTS` entries.
+
+    Format: comma-separated `owner_login/project_number` entries.
+    Example: `octo-org/3,octo-org/7`
+    """
+    if not value:
+        return frozenset()
+
+    parts = [p.strip() for p in value.split(",")]
+    entries = [p for p in parts if p]
+
+    allowed: set[str] = set()
+    for entry in entries:
+        if entry.count("/") != 1:
+            raise SafeError(code="Config", message="Invalid GITHUB_APP_MCP_ALLOWED_PROJECTS entry")
+        owner_raw, number_raw = entry.split("/", 1)
+        owner = owner_raw.strip().lower()
+        number_s = number_raw.strip()
+        if not owner:
+            raise SafeError(code="Config", message="Invalid GITHUB_APP_MCP_ALLOWED_PROJECTS entry")
+        try:
+            number = int(number_s)
+        except ValueError as exc:
+            raise SafeError(code="Config", message="Invalid GITHUB_APP_MCP_ALLOWED_PROJECTS entry") from exc
+        if number < 1:
+            raise SafeError(code="Config", message="Invalid GITHUB_APP_MCP_ALLOWED_PROJECTS entry")
+        allowed.add(f"{owner}/{number}")
+
+    return frozenset(allowed)
 
 
 def _parse_patterns(value: str | None) -> tuple[str, ...]:
@@ -118,6 +154,7 @@ def load_config_from_env() -> AppConfig:
         raise SafeError(code="Config", message="GitHub App private key file is unreadable") from exc
 
     allowed_repos = _parse_allowed_repos(os.getenv("GITHUB_APP_MCP_ALLOWED_REPOS"))
+    allowed_projects = _parse_allowed_projects(os.getenv("GITHUB_APP_MCP_ALLOWED_PROJECTS"))
     pr_only = _parse_bool(os.getenv("GITHUB_APP_MCP_PR_ONLY"))
     protected = _parse_patterns(os.getenv("GITHUB_APP_MCP_PROTECTED_BRANCHES"))
 
@@ -140,6 +177,7 @@ def load_config_from_env() -> AppConfig:
         private_key_path=key_path,
         policy=PolicyConfig(
             allowed_repos=allowed_repos,
+            allowed_projects=allowed_projects,
             pr_only=pr_only,
             protected_branches=protected,
         ),

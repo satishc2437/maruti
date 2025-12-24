@@ -28,12 +28,31 @@ The server exposes a fixed, allow-listed set of operations:
 - `open_pull_request`
 - `comment_on_issue`
 
+Issue tools (for task-queue workflows):
+
+- `create_issue`
+- `get_issue`
+- `update_issue`
+
+GitHub Projects v2 tools (task queue):
+
+- `get_project_v2_by_number`
+- `list_project_v2_fields`
+- `list_project_v2_items`
+- `get_project_v2_item`
+- `set_project_v2_item_field_value`
+- `add_issue_to_project_v2`
+
 Every tool response includes a `correlation_id` which can be used to find the matching audit log entries.
 
 ## Resources
 
 - `github-app-mcp://server-status`: non-secret server configuration and limits
 - `github-app-mcp://capabilities`: allow-listed operations and safety constraints
+
+## Feature docs
+
+- GitHub Project Task Queue (Projects v2): [`specs/003-github-project-tasks/quickstart.md`](../../specs/003-github-project-tasks/quickstart.md)
 
 ## Run (development)
 
@@ -69,6 +88,7 @@ This server is configured via host-provided environment variables (agents must n
 | `GITHUB_APP_INSTALLATION_ID` | yes | Installation ID for the app |
 | `GITHUB_APP_PRIVATE_KEY_PATH` | yes | Filesystem path to the app private key `.pem` |
 | `GITHUB_APP_MCP_ALLOWED_REPOS` | no | Comma-separated `owner/repo` allowlist. If set, requests outside this list are denied. |
+| `GITHUB_APP_MCP_ALLOWED_PROJECTS` | no | Comma-separated `owner_login/project_number` allowlist. If unset, Projects v2 tools are denied (fail-closed). |
 | `GITHUB_APP_MCP_PR_ONLY` | no | `1`/`0`. If enabled, denies write operations that bypass the PR workflow. |
 | `GITHUB_APP_MCP_PROTECTED_BRANCHES` | no | Comma-separated branch name/pattern list treated as protected. |
 | `GITHUB_APP_MCP_AUDIT_LOG_PATH` | no | Optional file sink for JSONL audit events. If unset, auditing still occurs (stderr/logging). |
@@ -94,6 +114,7 @@ Example `mcp.json` snippet (adjust for your MCP client as needed):
         "GITHUB_APP_INSTALLATION_ID": "<installation-id>",
         "GITHUB_APP_PRIVATE_KEY_PATH": "/absolute/path/to/private-key.pem",
         "GITHUB_APP_MCP_ALLOWED_REPOS": "octo-org/example-repo",
+        "GITHUB_APP_MCP_ALLOWED_PROJECTS": "octo-org/3",
         "GITHUB_APP_MCP_PR_ONLY": "1",
         "GITHUB_APP_MCP_PROTECTED_BRANCHES": "main,master",
         "GITHUB_APP_MCP_AUDIT_LOG_PATH": "/absolute/path/to/github-app-mcp.audit.jsonl"

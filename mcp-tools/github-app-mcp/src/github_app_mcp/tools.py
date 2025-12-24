@@ -18,6 +18,7 @@ from .auth import GitHubAppAuth
 from .config import AppConfig, load_config_from_env
 from .errors import SafeError, internal_error, safe_error_to_result
 from .github_client import GitHubClient, RequestBudget
+from .github_graphql_client import GitHubGraphQLClient
 from .policy import Policy
 from .safety import enforce_max_bytes, validate_no_secrets
 
@@ -160,7 +161,145 @@ TOOL_METADATA: dict[str, dict[str, Any]] = {
             "additionalProperties": False,
         },
     },
+
+    "create_issue": {
+        "description": "Create an Issue in an allowlisted repository with optional standard metadata.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["owner", "repo", "title", "body"],
+            "properties": {
+                "owner": {"type": "string", "minLength": 1},
+                "repo": {"type": "string", "minLength": 1},
+                "title": {"type": "string", "minLength": 1},
+                "body": {"type": "string"},
+                "labels": {"type": "array"},
+                "assignees": {"type": "array"},
+                "milestone": {"type": "integer"},
+            },
+            "additionalProperties": False,
+        },
+    },
+    "get_project_v2_by_number": {
+        "description": "Resolve a GitHub Project (Projects v2) by owner login and project number.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["owner_login", "project_number"],
+            "properties": {
+                "owner_login": {"type": "string", "minLength": 1},
+                "project_number": {"type": "integer", "minimum": 1},
+            },
+            "additionalProperties": False,
+        },
+    },
+    "add_issue_to_project_v2": {
+        "description": "Add an Issue (by node id) to a GitHub Project (Projects v2) by project id.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["project_id", "issue_node_id"],
+            "properties": {
+                "project_id": {"type": "string", "minLength": 1},
+                "issue_node_id": {"type": "string", "minLength": 1},
+            },
+            "additionalProperties": False,
+        },
+    },
+
+    "list_project_v2_fields": {
+        "description": "List GitHub Project (Projects v2) fields and single-select options.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["project_id"],
+            "properties": {
+                "project_id": {"type": "string", "minLength": 1},
+            },
+            "additionalProperties": False,
+        },
+    },
+    "list_project_v2_items": {
+        "description": "List GitHub Project (Projects v2) items with pagination and optional status filtering.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["project_id"],
+            "properties": {
+                "project_id": {"type": "string", "minLength": 1},
+                "page_size": {"type": "integer", "minimum": 1, "maximum": 50},
+                "after_cursor": {"type": "string"},
+                "status_option_id": {"type": "string"},
+            },
+            "additionalProperties": False,
+        },
+    },
+    "get_project_v2_item": {
+        "description": "Get a single GitHub Project (Projects v2) item and its linked content.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["project_id", "item_id"],
+            "properties": {
+                "project_id": {"type": "string", "minLength": 1},
+                "item_id": {"type": "string", "minLength": 1},
+            },
+            "additionalProperties": False,
+        },
+    },
+    "set_project_v2_item_field_value": {
+        "description": "Set a ProjectV2 item single-select field value.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["project_id", "item_id", "field_id", "single_select_option_id"],
+            "properties": {
+                "project_id": {"type": "string", "minLength": 1},
+                "item_id": {"type": "string", "minLength": 1},
+                "field_id": {"type": "string", "minLength": 1},
+                "single_select_option_id": {"type": "string", "minLength": 1},
+            },
+            "additionalProperties": False,
+        },
+    },
+    "get_issue": {
+        "description": "Fetch an Issue by owner/repo and issue number.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["owner", "repo", "number"],
+            "properties": {
+                "owner": {"type": "string", "minLength": 1},
+                "repo": {"type": "string", "minLength": 1},
+                "number": {"type": "integer", "minimum": 1},
+            },
+            "additionalProperties": False,
+        },
+    },
+    "update_issue": {
+        "description": "Update an Issue's title/body/metadata/state.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["owner", "repo", "number"],
+            "properties": {
+                "owner": {"type": "string", "minLength": 1},
+                "repo": {"type": "string", "minLength": 1},
+                "number": {"type": "integer", "minimum": 1},
+                "title": {"type": "string"},
+                "body": {"type": "string"},
+                "labels": {"type": "array"},
+                "assignees": {"type": "array"},
+                "milestone": {"type": "integer"},
+                "state": {"type": "string"},
+            },
+            "additionalProperties": False,
+        },
+    },
 }
+
+
+_PROJECT_SCOPED_TOOLS: frozenset[str] = frozenset(
+    {
+        "get_project_v2_by_number",
+        "add_issue_to_project_v2",
+        "list_project_v2_fields",
+        "list_project_v2_items",
+        "get_project_v2_item",
+        "set_project_v2_item_field_value",
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -172,6 +311,7 @@ class Runtime:
     policy: Policy
     auth: GitHubAppAuth
     github: GitHubClient
+    graphql: GitHubGraphQLClient
 
 
 _RUNTIME: Runtime | None = None
@@ -223,6 +363,23 @@ def validate_tool_arguments(tool_name: str, arguments: dict[str, Any]) -> None:
         if expected == "object" and not isinstance(v, dict):
             raise SafeError(code="UserInput", message=f"Field '{k}' must be an object")
 
+        if expected == "string":
+            min_len = spec.get("minLength")
+            if isinstance(min_len, int) and len(v) < min_len:
+                raise SafeError(code="UserInput", message=f"Field '{k}' must be at least {min_len} characters")
+
+        if expected == "integer":
+            minimum = spec.get("minimum")
+            maximum = spec.get("maximum")
+            has_min = isinstance(minimum, int)
+            has_max = isinstance(maximum, int)
+            if has_min and has_max and not (minimum <= v <= maximum):
+                raise SafeError(code="UserInput", message=f"Field '{k}' must be between {minimum} and {maximum}")
+            if has_min and not has_max and v < minimum:
+                raise SafeError(code="UserInput", message=f"Field '{k}' must be >= {minimum}")
+            if has_max and not has_min and v > maximum:
+                raise SafeError(code="UserInput", message=f"Field '{k}' must be <= {maximum}")
+
 
 def initialize_runtime_from_env() -> Runtime:
     """Initialize and cache runtime from environment.
@@ -241,13 +398,15 @@ def initialize_runtime_from_env() -> Runtime:
     )
     policy = Policy(
         allowed_repos=config.policy.allowed_repos,
+        allowed_projects=config.policy.allowed_projects,
         pr_only=config.policy.pr_only,
         protected_branch_patterns=config.policy.protected_branches,
     )
     auth = GitHubAppAuth(config=config)
     github = GitHubClient(token_provider=auth.get_installation_token, limits=config.limits)
+    graphql = GitHubGraphQLClient(token_provider=auth.get_installation_token, limits=config.limits)
 
-    _RUNTIME = Runtime(config=config, audit=audit, policy=policy, auth=auth, github=github)
+    _RUNTIME = Runtime(config=config, audit=audit, policy=policy, auth=auth, github=github, graphql=graphql)
     return _RUNTIME
 
 
@@ -267,6 +426,701 @@ def _require_int(arguments: dict[str, Any], key: str) -> int:
     if not isinstance(v, int):
         raise SafeError(code="UserInput", message=f"Field '{key}' must be an integer")
     return v
+
+
+_QUERY_GET_PROJECT_V2_BY_NUMBER = """
+query($login: String!, $number: Int!) {
+  repositoryOwner(login: $login) {
+    __typename
+    login
+    ... on Organization {
+      projectV2(number: $number) { id number title url }
+    }
+    ... on User {
+      projectV2(number: $number) { id number title url }
+    }
+  }
+}
+""".strip()
+
+
+_QUERY_PROJECT_V2_NODE_INFO = """
+query($id: ID!) {
+  node(id: $id) {
+    __typename
+    ... on ProjectV2 {
+      number
+      url
+      owner { login }
+    }
+  }
+}
+""".strip()
+
+
+_QUERY_LIST_PROJECT_V2_FIELDS = """
+query($id: ID!) {
+    node(id: $id) {
+        __typename
+        ... on ProjectV2 {
+            number
+            owner { login }
+            fields(first: 100) {
+                nodes {
+                    __typename
+                    ... on ProjectV2FieldCommon { id name }
+                    ... on ProjectV2SingleSelectField {
+                        options { id name }
+                    }
+                }
+            }
+        }
+    }
+}
+""".strip()
+
+
+_QUERY_LIST_PROJECT_V2_ITEMS = """
+query($id: ID!, $first: Int!, $after: String) {
+    node(id: $id) {
+        __typename
+        ... on ProjectV2 {
+            number
+            owner { login }
+            items(first: $first, after: $after) {
+                pageInfo { hasNextPage endCursor }
+                nodes {
+                    id
+                    content {
+                        __typename
+                        ... on Issue {
+                            id
+                            number
+                            url
+                            repository { name owner { login } }
+                        }
+                    }
+                    fieldValues(first: 20) {
+                        nodes {
+                            __typename
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                                name
+                                optionId
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+""".strip()
+
+
+_QUERY_GET_PROJECT_V2_ITEM = """
+query($projectId: ID!, $itemId: ID!) {
+    project: node(id: $projectId) {
+        __typename
+        ... on ProjectV2 { number owner { login } }
+    }
+    item: node(id: $itemId) {
+        __typename
+        ... on ProjectV2Item {
+            id
+            content {
+                __typename
+                ... on Issue {
+                    id
+                    number
+                    url
+                    repository { name owner { login } }
+                }
+            }
+            fieldValues(first: 20) {
+                nodes {
+                    __typename
+                    ... on ProjectV2ItemFieldSingleSelectValue { name optionId }
+                }
+            }
+        }
+    }
+}
+""".strip()
+
+
+_MUTATION_ADD_ISSUE_TO_PROJECT_V2 = """
+mutation($projectId: ID!, $contentId: ID!) {
+  addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+    item { id }
+  }
+}
+""".strip()
+
+
+_MUTATION_SET_PROJECT_V2_ITEM_FIELD_VALUE = """
+mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+    updateProjectV2ItemFieldValue(
+        input: {
+            projectId: $projectId,
+            itemId: $itemId,
+            fieldId: $fieldId,
+            value: { singleSelectOptionId: $optionId }
+        }
+    ) {
+        projectV2Item { id }
+    }
+}
+""".strip()
+
+
+async def _tool_create_issue(runtime: Runtime, arguments: dict[str, Any]) -> dict[str, Any]:
+    owner = _require_str(arguments, "owner")
+    repo = _require_str(arguments, "repo")
+    title = _require_str(arguments, "title")
+    body = arguments["body"]
+    labels = arguments.get("labels")
+    assignees = arguments.get("assignees")
+    milestone = arguments.get("milestone")
+
+    enforce_max_bytes(
+        data=title.encode("utf-8"),
+        max_bytes=runtime.config.limits.issue_title_max_bytes,
+        what="issue title",
+    )
+    enforce_max_bytes(
+        data=body.encode("utf-8"),
+        max_bytes=runtime.config.limits.issue_body_max_bytes,
+        what="issue body",
+    )
+
+    payload: dict[str, Any] = {"title": title, "body": body}
+    if labels is not None:
+        payload["labels"] = labels
+    if assignees is not None:
+        payload["assignees"] = assignees
+    if milestone is not None:
+        payload["milestone"] = milestone
+
+    data = await runtime.github.request_json(
+        method="POST",
+        path=f"/repos/{owner}/{repo}/issues",
+        json_body=payload,
+        budget=_budget(runtime),
+    )
+    if not isinstance(data, dict):
+        raise SafeError(code="GitHub", message="Unexpected issue response")
+    number = data.get("number")
+    url = data.get("html_url")
+    node_id = data.get("node_id")
+    if not isinstance(number, int) or not isinstance(url, str) or not isinstance(node_id, str):
+        raise SafeError(code="GitHub", message="Unexpected issue response")
+
+    issue_obj = {
+        "owner": owner,
+        "repo": repo,
+        "number": number,
+        "url": url,
+        "issue_node_id": node_id,
+        "node_id": node_id,
+    }
+    return {"issue": issue_obj}
+
+
+async def _tool_get_project_v2_by_number(runtime: Runtime, arguments: dict[str, Any]) -> dict[str, Any]:
+    owner_login = _require_str(arguments, "owner_login")
+    project_number = _require_int(arguments, "project_number")
+    if project_number < 1:
+        raise SafeError(code="UserInput", message="Field 'project_number' must be >= 1")
+
+    decision = runtime.policy.check_project_allowed(owner_login=owner_login, project_number=project_number)
+    if not decision.allowed:
+        raise SafeError(code="Forbidden", message="Project is not allowed")
+
+    result = await runtime.graphql.execute(
+        query=_QUERY_GET_PROJECT_V2_BY_NUMBER,
+        variables={"login": owner_login, "number": project_number},
+        budget=_budget(runtime),
+    )
+    data = result.data
+    owner = data.get("repositoryOwner")
+    if not isinstance(owner, dict):
+        raise SafeError(code="GitHub", message="Unexpected project response")
+
+    project = owner.get("projectV2")
+    if not isinstance(project, dict):
+        raise SafeError(code="UserInput", message="Project not found")
+
+    project_id = project.get("id")
+    url = project.get("url")
+    title = project.get("title")
+    number = project.get("number")
+    login = owner.get("login")
+    if not isinstance(project_id, str) or not isinstance(url, str) or not isinstance(title, str):
+        raise SafeError(code="GitHub", message="Unexpected project response")
+    if not isinstance(number, int) or not isinstance(login, str):
+        raise SafeError(code="GitHub", message="Unexpected project response")
+
+    return {
+        "project": {
+            "project_id": project_id,
+            "owner_login": login,
+            "project_number": number,
+            "url": url,
+            "title": title,
+        }
+    }
+
+
+async def _resolve_project_v2_owner_and_number(runtime: Runtime, *, project_id: str) -> tuple[str, int]:
+    result = await runtime.graphql.execute(
+        query=_QUERY_PROJECT_V2_NODE_INFO,
+        variables={"id": project_id},
+        budget=_budget(runtime),
+    )
+    node = result.data.get("node")
+    if not isinstance(node, dict) or node.get("__typename") != "ProjectV2":
+        raise SafeError(code="UserInput", message="Project not found")
+
+    number = node.get("number")
+    owner = node.get("owner")
+    login = owner.get("login") if isinstance(owner, dict) else None
+    if not isinstance(number, int) or not isinstance(login, str):
+        raise SafeError(code="GitHub", message="Unexpected project response")
+    return login, number
+
+
+async def _tool_add_issue_to_project_v2(runtime: Runtime, arguments: dict[str, Any]) -> dict[str, Any]:
+    project_id = _require_str(arguments, "project_id")
+    issue_node_id = _require_str(arguments, "issue_node_id")
+
+    owner_login, project_number = await _resolve_project_v2_owner_and_number(runtime, project_id=project_id)
+    decision = runtime.policy.check_project_allowed(owner_login=owner_login, project_number=project_number)
+    if not decision.allowed:
+        raise SafeError(code="Forbidden", message="Project is not allowed")
+
+    result = await runtime.graphql.execute(
+        query=_MUTATION_ADD_ISSUE_TO_PROJECT_V2,
+        variables={"projectId": project_id, "contentId": issue_node_id},
+        budget=_budget(runtime),
+    )
+
+    payload = result.data.get("addProjectV2ItemById")
+    item = payload.get("item") if isinstance(payload, dict) else None
+    item_id = item.get("id") if isinstance(item, dict) else None
+    if not isinstance(item_id, str):
+        raise SafeError(code="GitHub", message="Unexpected add-to-project response")
+
+    return {"item": {"item_id": item_id}}
+
+
+def _project_allowlist_check_or_forbid(runtime: Runtime, *, owner_login: str, project_number: int) -> None:
+    decision = runtime.policy.check_project_allowed(owner_login=owner_login, project_number=project_number)
+    if not decision.allowed:
+        raise SafeError(code="Forbidden", message="Project is not allowed")
+
+
+def _extract_first_single_select_value(field_values: object) -> tuple[str | None, str | None]:
+    if not isinstance(field_values, dict):
+        return None, None
+    nodes = field_values.get("nodes")
+    if not isinstance(nodes, list):
+        return None, None
+    for fv in nodes:
+        if not isinstance(fv, dict):
+            continue
+        if fv.get("__typename") != "ProjectV2ItemFieldSingleSelectValue":
+            continue
+        option_id = fv.get("optionId")
+        name = fv.get("name")
+        if isinstance(option_id, str) and isinstance(name, str):
+            return option_id, name
+    return None, None
+
+
+def _find_single_select_value_by_option_id(field_values: object, option_id: str) -> tuple[str | None, str | None]:
+    if not isinstance(field_values, dict):
+        return None, None
+    nodes = field_values.get("nodes")
+    if not isinstance(nodes, list):
+        return None, None
+    for fv in nodes:
+        if not isinstance(fv, dict):
+            continue
+        if fv.get("__typename") != "ProjectV2ItemFieldSingleSelectValue":
+            continue
+        oid = fv.get("optionId")
+        name = fv.get("name")
+        if oid == option_id and isinstance(name, str):
+            return option_id, name
+    return None, None
+
+
+def _parse_issue_content(content: object) -> tuple[str, dict[str, Any] | None]:
+    if not isinstance(content, dict) or not isinstance(content.get("__typename"), str):
+        return "unknown", None
+
+    typename: str = content["__typename"]
+    if typename != "Issue":
+        return typename.lower(), None
+
+    issue_id = content.get("id")
+    number_i = content.get("number")
+    url = content.get("url")
+    repo_obj = content.get("repository")
+    repo_name = repo_obj.get("name") if isinstance(repo_obj, dict) else None
+    repo_owner_obj = repo_obj.get("owner") if isinstance(repo_obj, dict) else None
+    repo_owner_login = repo_owner_obj.get("login") if isinstance(repo_owner_obj, dict) else None
+
+    if not (
+        isinstance(issue_id, str)
+        and isinstance(number_i, int)
+        and isinstance(url, str)
+        and isinstance(repo_name, str)
+        and isinstance(repo_owner_login, str)
+    ):
+        return "issue", None
+
+    return (
+        "issue",
+        {
+            "owner": repo_owner_login,
+            "repo": repo_name,
+            "number": number_i,
+            "url": url,
+            "issue_node_id": issue_id,
+        },
+    )
+
+
+async def _tool_list_project_v2_fields(runtime: Runtime, arguments: dict[str, Any]) -> dict[str, Any]:
+    project_id = _require_str(arguments, "project_id")
+
+    result = await runtime.graphql.execute(
+        query=_QUERY_LIST_PROJECT_V2_FIELDS,
+        variables={"id": project_id},
+        budget=_budget(runtime),
+    )
+    node = result.data.get("node")
+    if not isinstance(node, dict) or node.get("__typename") != "ProjectV2":
+        raise SafeError(code="UserInput", message="Project not found")
+
+    owner = node.get("owner")
+    login = owner.get("login") if isinstance(owner, dict) else None
+    number = node.get("number")
+    if not (isinstance(login, str) and isinstance(number, int)):
+        raise SafeError(code="GitHub", message="Unexpected project response")
+    _project_allowlist_check_or_forbid(runtime, owner_login=login, project_number=number)
+
+    fields_conn = node.get("fields")
+    fields_nodes = fields_conn.get("nodes") if isinstance(fields_conn, dict) else None
+    if not isinstance(fields_nodes, list):
+        raise SafeError(code="GitHub", message="Unexpected project fields response")
+
+    fields: list[dict[str, Any]] = []
+    for f in fields_nodes:
+        if not (
+            isinstance(f, dict)
+            and isinstance(f.get("id"), str)
+            and isinstance(f.get("name"), str)
+            and isinstance(f.get("__typename"), str)
+        ):
+            continue
+        field_id = f["id"]
+        name = f["name"]
+        typename = f["__typename"]
+        data_type = "unknown"
+        if typename == "ProjectV2SingleSelectField":
+            data_type = "single_select"
+        elif typename == "ProjectV2TextField":
+            data_type = "text"
+
+        out_field: dict[str, Any] = {"field_id": field_id, "name": name, "data_type": data_type}
+        if typename == "ProjectV2SingleSelectField":
+            opts = f.get("options")
+            options_out: list[dict[str, Any]] = []
+            if isinstance(opts, list):
+                for o in opts:
+                    if not isinstance(o, dict):
+                        continue
+                    oid = o.get("id")
+                    oname = o.get("name")
+                    if isinstance(oid, str) and isinstance(oname, str):
+                        options_out.append({"option_id": oid, "name": oname})
+            out_field["options"] = options_out
+        fields.append(out_field)
+
+    return {"fields": fields}
+
+
+async def _tool_list_project_v2_items(runtime: Runtime, arguments: dict[str, Any]) -> dict[str, Any]:
+    project_id = _require_str(arguments, "project_id")
+    page_size = arguments.get("page_size")
+    if page_size is None:
+        page_size = 20
+    if not isinstance(page_size, int):
+        raise SafeError(code="UserInput", message="Field 'page_size' must be an integer")
+    if page_size < 1 or page_size > 50:
+        raise SafeError(code="UserInput", message="page_size must be between 1 and 50")
+
+    after_cursor = arguments.get("after_cursor")
+    if after_cursor is not None and not isinstance(after_cursor, str):
+        raise SafeError(code="UserInput", message="Field 'after_cursor' must be a string")
+
+    status_option_id = arguments.get("status_option_id")
+    if status_option_id is not None and not isinstance(status_option_id, str):
+        raise SafeError(code="UserInput", message="Field 'status_option_id' must be a string")
+
+    result = await runtime.graphql.execute(
+        query=_QUERY_LIST_PROJECT_V2_ITEMS,
+        variables={"id": project_id, "first": page_size, "after": after_cursor},
+        budget=_budget(runtime),
+    )
+    node = result.data.get("node")
+    if not isinstance(node, dict) or node.get("__typename") != "ProjectV2":
+        raise SafeError(code="UserInput", message="Project not found")
+
+    owner = node.get("owner")
+    login = owner.get("login") if isinstance(owner, dict) else None
+    number = node.get("number")
+    if not (isinstance(login, str) and isinstance(number, int)):
+        raise SafeError(code="GitHub", message="Unexpected project response")
+    _project_allowlist_check_or_forbid(runtime, owner_login=login, project_number=number)
+
+    items_conn = node.get("items")
+    if not isinstance(items_conn, dict):
+        raise SafeError(code="GitHub", message="Unexpected project items response")
+    page_info = items_conn.get("pageInfo")
+    nodes = items_conn.get("nodes")
+    if not (isinstance(page_info, dict) and isinstance(nodes, list)):
+        raise SafeError(code="GitHub", message="Unexpected project items response")
+
+    has_next = page_info.get("hasNextPage")
+    end_cursor = page_info.get("endCursor")
+    if not isinstance(has_next, bool):
+        raise SafeError(code="GitHub", message="Unexpected project items response")
+    if end_cursor is not None and not isinstance(end_cursor, str):
+        end_cursor = None
+
+    items_out: list[dict[str, Any]] = []
+    for it in nodes:
+        if not isinstance(it, dict):
+            continue
+        item_id = it.get("id")
+        if not isinstance(item_id, str):
+            continue
+
+        content_type, issue_obj = _parse_issue_content(it.get("content"))
+
+        field_values = it.get("fieldValues")
+        if isinstance(status_option_id, str) and status_option_id:
+            status_id, status_name = _find_single_select_value_by_option_id(field_values, status_option_id)
+            if status_id is None:
+                continue
+        else:
+            status_id, status_name = _extract_first_single_select_value(field_values)
+
+        items_out.append(
+            {
+                "item_id": item_id,
+                "content_type": content_type,
+                "status_option_id": status_id,
+                "status_name": status_name,
+                "issue": issue_obj,
+            }
+        )
+
+    return {
+        "items": items_out,
+        "page_info": {"has_next_page": has_next, "end_cursor": end_cursor},
+    }
+
+
+async def _tool_get_project_v2_item(runtime: Runtime, arguments: dict[str, Any]) -> dict[str, Any]:
+    project_id = _require_str(arguments, "project_id")
+    item_id = _require_str(arguments, "item_id")
+
+    result = await runtime.graphql.execute(
+        query=_QUERY_GET_PROJECT_V2_ITEM,
+        variables={"projectId": project_id, "itemId": item_id},
+        budget=_budget(runtime),
+    )
+
+    project = result.data.get("project")
+    if not isinstance(project, dict) or project.get("__typename") != "ProjectV2":
+        raise SafeError(code="UserInput", message="Project not found")
+    number = project.get("number")
+    owner = project.get("owner")
+    login = owner.get("login") if isinstance(owner, dict) else None
+    if not isinstance(number, int) or not isinstance(login, str):
+        raise SafeError(code="GitHub", message="Unexpected project response")
+    _project_allowlist_check_or_forbid(runtime, owner_login=login, project_number=number)
+
+    item_node = result.data.get("item")
+    if not isinstance(item_node, dict) or item_node.get("__typename") != "ProjectV2Item":
+        raise SafeError(code="UserInput", message="Item not found")
+    raw_item_id = item_node.get("id")
+    if not isinstance(raw_item_id, str):
+        raise SafeError(code="GitHub", message="Unexpected item response")
+
+    content_type, issue_obj = _parse_issue_content(item_node.get("content"))
+
+    status_id, status_name = _extract_first_single_select_value(item_node.get("fieldValues"))
+
+    return {
+        "item": {
+            "item_id": raw_item_id,
+            "content_type": content_type,
+            "status_option_id": status_id,
+            "status_name": status_name,
+            "issue": issue_obj,
+        }
+    }
+
+
+async def _tool_set_project_v2_item_field_value(runtime: Runtime, arguments: dict[str, Any]) -> dict[str, Any]:
+    project_id = _require_str(arguments, "project_id")
+    item_id = _require_str(arguments, "item_id")
+    field_id = _require_str(arguments, "field_id")
+    option_id = _require_str(arguments, "single_select_option_id")
+
+    # Resolve owner/number for allowlist enforcement.
+    node_result = await runtime.graphql.execute(
+        query=_QUERY_PROJECT_V2_NODE_INFO,
+        variables={"id": project_id},
+        budget=_budget(runtime),
+    )
+    node = node_result.data.get("node")
+    if not isinstance(node, dict) or node.get("__typename") != "ProjectV2":
+        raise SafeError(code="UserInput", message="Project not found")
+    number = node.get("number")
+    owner = node.get("owner")
+    login = owner.get("login") if isinstance(owner, dict) else None
+    if not isinstance(number, int) or not isinstance(login, str):
+        raise SafeError(code="GitHub", message="Unexpected project response")
+    _project_allowlist_check_or_forbid(runtime, owner_login=login, project_number=number)
+
+    result = await runtime.graphql.execute(
+        query=_MUTATION_SET_PROJECT_V2_ITEM_FIELD_VALUE,
+        variables={"projectId": project_id, "itemId": item_id, "fieldId": field_id, "optionId": option_id},
+        budget=_budget(runtime),
+    )
+    payload = result.data.get("updateProjectV2ItemFieldValue")
+    proj_item = payload.get("projectV2Item") if isinstance(payload, dict) else None
+    updated_id = proj_item.get("id") if isinstance(proj_item, dict) else None
+    if not isinstance(updated_id, str):
+        raise SafeError(code="GitHub", message="Unexpected set-field response")
+
+    return {"item": {"item_id": updated_id}}
+
+
+async def _tool_get_issue(runtime: Runtime, arguments: dict[str, Any]) -> dict[str, Any]:
+    owner = _require_str(arguments, "owner")
+    repo = _require_str(arguments, "repo")
+    number = _require_int(arguments, "number")
+    if number < 1:
+        raise SafeError(code="UserInput", message="Field 'number' must be >= 1")
+
+    data = await runtime.github.request_json(
+        method="GET",
+        path=f"/repos/{owner}/{repo}/issues/{number}",
+        budget=_budget(runtime),
+    )
+    if not isinstance(data, dict):
+        raise SafeError(code="GitHub", message="Unexpected issue response")
+    if "pull_request" in data:
+        raise SafeError(code="UserInput", message="Pull requests are not supported")
+
+    node_id = data.get("node_id")
+    url = data.get("html_url")
+    title = data.get("title")
+    body = data.get("body")
+    state = data.get("state")
+    if not isinstance(node_id, str) or not isinstance(url, str) or not isinstance(title, str) or not isinstance(state, str):
+        raise SafeError(code="GitHub", message="Unexpected issue response")
+    if body is not None and not isinstance(body, str):
+        body = None
+
+    return {
+        "issue": {
+            "owner": owner,
+            "repo": repo,
+            "number": number,
+            "url": url,
+            "issue_node_id": node_id,
+            "node_id": node_id,
+            "title": title,
+            "body": body,
+            "state": state.lower(),
+        }
+    }
+
+
+async def _tool_update_issue(runtime: Runtime, arguments: dict[str, Any]) -> dict[str, Any]:
+    owner = _require_str(arguments, "owner")
+    repo = _require_str(arguments, "repo")
+    number = _require_int(arguments, "number")
+    if number < 1:
+        raise SafeError(code="UserInput", message="Field 'number' must be >= 1")
+
+    payload: dict[str, Any] = {}
+    if "title" in arguments:
+        title = arguments.get("title")
+        if not isinstance(title, str):
+            raise SafeError(code="UserInput", message="Field 'title' must be a string")
+        enforce_max_bytes(data=title.encode("utf-8"), max_bytes=runtime.config.limits.issue_title_max_bytes, what="issue title")
+        payload["title"] = title
+    if "body" in arguments:
+        body = arguments.get("body")
+        if not isinstance(body, str):
+            raise SafeError(code="UserInput", message="Field 'body' must be a string")
+        enforce_max_bytes(data=body.encode("utf-8"), max_bytes=runtime.config.limits.issue_body_max_bytes, what="issue body")
+        payload["body"] = body
+
+    for k in ("labels", "assignees", "milestone"):
+        if k in arguments:
+            payload[k] = arguments.get(k)
+
+    if "state" in arguments:
+        state = arguments.get("state")
+        if not isinstance(state, str):
+            raise SafeError(code="UserInput", message="Field 'state' must be a string")
+        normalized = state.strip().lower()
+        if normalized not in {"open", "closed"}:
+            raise SafeError(code="UserInput", message="Field 'state' must be 'open' or 'closed'")
+        payload["state"] = normalized
+
+    data = await runtime.github.request_json(
+        method="PATCH",
+        path=f"/repos/{owner}/{repo}/issues/{number}",
+        json_body=payload,
+        budget=_budget(runtime),
+    )
+    if not isinstance(data, dict):
+        raise SafeError(code="GitHub", message="Unexpected issue response")
+
+    node_id = data.get("node_id")
+    url = data.get("html_url")
+    title = data.get("title")
+    body = data.get("body")
+    state = data.get("state")
+    if not isinstance(node_id, str) or not isinstance(url, str) or not isinstance(title, str) or not isinstance(state, str):
+        raise SafeError(code="GitHub", message="Unexpected issue response")
+    if body is not None and not isinstance(body, str):
+        body = None
+
+    return {
+        "issue": {
+            "owner": owner,
+            "repo": repo,
+            "number": number,
+            "url": url,
+            "issue_node_id": node_id,
+            "node_id": node_id,
+            "title": title,
+            "body": body,
+            "state": state.lower(),
+        }
+    }
 
 
 async def _tool_get_repository(runtime: Runtime, arguments: dict[str, Any]) -> dict[str, Any]:
@@ -693,6 +1547,15 @@ _TOOL_FUNCS: dict[str, Any] = {
     "commit_changes": _tool_commit_changes,
     "open_pull_request": _tool_open_pull_request,
     "comment_on_issue": _tool_comment_on_issue,
+    "create_issue": _tool_create_issue,
+    "get_project_v2_by_number": _tool_get_project_v2_by_number,
+    "add_issue_to_project_v2": _tool_add_issue_to_project_v2,
+    "list_project_v2_fields": _tool_list_project_v2_fields,
+    "list_project_v2_items": _tool_list_project_v2_items,
+    "get_project_v2_item": _tool_get_project_v2_item,
+    "set_project_v2_item_field_value": _tool_set_project_v2_item_field_value,
+    "get_issue": _tool_get_issue,
+    "update_issue": _tool_update_issue,
 }
 
 
@@ -733,9 +1596,10 @@ async def dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if not op_decision.allowed:
             raise SafeError(code="Forbidden", message="Operation is not allowed")
 
-        repo_decision = runtime.policy.check_repo_allowed(target_repo)
-        if not repo_decision.allowed:
-            raise SafeError(code="Forbidden", message="Repository is not allowed")
+        if name not in _PROJECT_SCOPED_TOOLS:
+            repo_decision = runtime.policy.check_repo_allowed(target_repo)
+            if not repo_decision.allowed:
+                raise SafeError(code="Forbidden", message="Repository is not allowed")
 
         func = _TOOL_FUNCS.get(name)
         if func is None:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-Simple test for Agent Memory core functionality.
+"""Simple test for Agent Memory core functionality.
+
 Tests individual modules directly to avoid MCP dependency.
 """
 

@@ -98,6 +98,9 @@ async def read_resource(uri: Any) -> str:
                 "no_pats_or_user_tokens": True,
                 "no_arbitrary_github_api_calls": True,
                 "github_api_host_allowlist": ["https://api.github.com"],
+                "projects_v2_via_graphql": True,
+                "project_tools_restricted_by_allowlist": True,
+                "project_allowlist_env_var": "GITHUB_APP_MCP_ALLOWED_PROJECTS",
             },
         }
         return json.dumps(caps, indent=2)
@@ -123,6 +126,8 @@ async def read_resource(uri: Any) -> str:
             status["policy"] = {
                 "repo_allowlist_enabled": bool(runtime.config.policy.allowed_repos),
                 "repo_allowlist_count": len(runtime.config.policy.allowed_repos),
+                "project_allowlist_enabled": bool(runtime.config.policy.allowed_projects),
+                "project_allowlist_count": len(runtime.config.policy.allowed_projects),
                 "pr_only": runtime.config.policy.pr_only,
                 "protected_branch_patterns_count": len(runtime.config.policy.protected_branches),
             }

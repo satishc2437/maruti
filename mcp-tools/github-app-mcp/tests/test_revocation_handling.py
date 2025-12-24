@@ -45,6 +45,7 @@ def _make_runtime(*, transport: httpx.AsyncBaseTransport) -> tuple[tools.Runtime
         private_key_path=Path("/tmp/does-not-matter.pem"),
         policy=PolicyConfig(
             allowed_repos=frozenset({"octo/repo"}),
+            allowed_projects=frozenset(),
             pr_only=False,
             protected_branches=(),
         ),
@@ -62,11 +63,13 @@ def _make_runtime(*, transport: httpx.AsyncBaseTransport) -> tuple[tools.Runtime
         audit=audit,  # type: ignore[arg-type]
         policy=Policy(
             allowed_repos=cfg.policy.allowed_repos,
+            allowed_projects=cfg.policy.allowed_projects,
             pr_only=cfg.policy.pr_only,
             protected_branch_patterns=cfg.policy.protected_branches,
         ),
         auth=None,  # type: ignore[arg-type]
         github=github,
+        graphql=None,  # type: ignore[arg-type]
     )
 
     return runtime, audit

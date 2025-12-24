@@ -45,6 +45,7 @@ def _runtime(*, allowed_repos: frozenset[str]) -> tools.Runtime:
         private_key_path=Path("/tmp/does-not-matter.pem"),
         policy=PolicyConfig(
             allowed_repos=allowed_repos,
+            allowed_projects=frozenset(),
             pr_only=True,
             protected_branches=("main",),
         ),
@@ -60,11 +61,13 @@ def _runtime(*, allowed_repos: frozenset[str]) -> tools.Runtime:
         audit=audit,  # type: ignore[arg-type]
         policy=Policy(
             allowed_repos=cfg.policy.allowed_repos,
+            allowed_projects=cfg.policy.allowed_projects,
             pr_only=cfg.policy.pr_only,
             protected_branch_patterns=cfg.policy.protected_branches,
         ),
         auth=None,  # type: ignore[arg-type]
         github=DummyGitHub(),  # type: ignore[arg-type]
+        graphql=None,  # type: ignore[arg-type]
     )
 
 
@@ -126,6 +129,7 @@ async def test_create_branch_translates_reference_already_exists(monkeypatch: py
         private_key_path=Path("/tmp/does-not-matter.pem"),
         policy=PolicyConfig(
             allowed_repos=frozenset({"octo/repo"}),
+            allowed_projects=frozenset(),
             pr_only=True,
             protected_branches=("main",),
         ),
@@ -153,11 +157,13 @@ async def test_create_branch_translates_reference_already_exists(monkeypatch: py
         audit=audit,  # type: ignore[arg-type]
         policy=Policy(
             allowed_repos=cfg.policy.allowed_repos,
+            allowed_projects=cfg.policy.allowed_projects,
             pr_only=cfg.policy.pr_only,
             protected_branch_patterns=cfg.policy.protected_branches,
         ),
         auth=None,  # type: ignore[arg-type]
         github=GitHubAlreadyExists(),  # type: ignore[arg-type]
+        graphql=None,  # type: ignore[arg-type]
     )
 
     monkeypatch.setattr(tools, "initialize_runtime_from_env", lambda: runtime)

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Test the PDF Reader MCP Server with a specific PDF file.
-"""
+"""Test the PDF Reader MCP Server with a specific PDF file."""
 
 import asyncio
 import json

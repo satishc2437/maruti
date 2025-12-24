@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-Basic functionality test for Agent Memory MCP Server.
+"""Basic functionality test for Agent Memory MCP Server.
+
 Tests core memory operations without requiring MCP framework.
 """
 

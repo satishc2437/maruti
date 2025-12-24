@@ -1,0 +1,260 @@
+{
+  "contract_version": "1",
+  "tool": "github-app-mcp",
+  "date": "2025-12-23",
+  "feature": "003-github-project-tasks",
+  "allow_listed_operations": [
+    "get_repository",
+    "list_branches",
+    "get_file",
+    "list_pull_requests",
+    "list_issues",
+    "create_branch",
+    "commit_changes",
+    "open_pull_request",
+    "comment_on_issue",
+
+    "get_project_v2_by_number",
+    "list_project_v2_fields",
+    "list_project_v2_items",
+    "get_project_v2_item",
+    "set_project_v2_item_field_value",
+    "add_issue_to_project_v2",
+
+    "create_issue",
+    "get_issue",
+    "update_issue"
+  ],
+  "invariants": [
+    "No secrets are returned to the agent (private keys, JWTs, installation tokens, installation IDs).",
+    "Only allow-listed high-level operations are supported (no arbitrary GitHub API passthrough).",
+    "Every operation returns a correlation_id for audit traceability.",
+    "Project-scoped operations are restricted by a host-provided project allowlist."
+  ],
+  "tools": [
+    {
+      "name": "get_project_v2_by_number",
+      "description": "Resolve an org/user project by owner + project number and return stable identifiers.",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner_login", "project_number"],
+        "properties": {
+          "owner_login": {"type": "string", "minLength": 1},
+          "project_number": {"type": "integer", "minimum": 1}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "project"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "project": {
+            "type": "object",
+            "required": ["project_id", "owner_login", "project_number", "url", "title"],
+            "properties": {
+              "project_id": {"type": "string"},
+              "owner_login": {"type": "string"},
+              "project_number": {"type": "integer"},
+              "url": {"type": "string"},
+              "title": {"type": "string"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_project_v2_fields",
+      "description": "List project fields and options (for single-select fields) so agents can safely set status.",
+      "input_schema": {
+        "type": "object",
+        "required": ["project_id"],
+        "properties": {
+          "project_id": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "fields"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["field_id", "name", "data_type"],
+              "properties": {
+                "field_id": {"type": "string"},
+                "name": {"type": "string"},
+                "data_type": {"type": "string"},
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["option_id", "name"],
+                    "properties": {
+                      "option_id": {"type": "string"},
+                      "name": {"type": "string"}
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_project_v2_items",
+      "description": "List project items with pagination and optional filtering by a single-select status option id.",
+      "input_schema": {
+        "type": "object",
+        "required": ["project_id"],
+        "properties": {
+          "project_id": {"type": "string", "minLength": 1},
+          "page_size": {"type": "integer", "minimum": 1, "maximum": 50},
+          "after_cursor": {"type": "string"},
+          "status_option_id": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "items", "page_info"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["item_id", "content_type"],
+              "properties": {
+                "item_id": {"type": "string"},
+                "content_type": {"type": "string"},
+                "status_option_id": {"type": ["string", "null"]},
+                "status_name": {"type": ["string", "null"]},
+                "issue": {
+                  "type": ["object", "null"],
+                  "required": ["owner", "repo", "number", "url", "issue_node_id"],
+                  "properties": {
+                    "owner": {"type": "string"},
+                    "repo": {"type": "string"},
+                    "number": {"type": "integer"},
+                    "url": {"type": "string"},
+                    "issue_node_id": {"type": "string"}
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "page_info": {
+            "type": "object",
+            "required": ["has_next_page", "end_cursor"],
+            "properties": {
+              "has_next_page": {"type": "boolean"},
+              "end_cursor": {"type": ["string", "null"]}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_issue",
+      "description": "Create an Issue in an allowlisted repository with optional standard metadata.",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner", "repo", "title", "body"],
+        "properties": {
+          "owner": {"type": "string", "minLength": 1},
+          "repo": {"type": "string", "minLength": 1},
+          "title": {"type": "string", "minLength": 1},
+          "body": {"type": "string"},
+          "labels": {"type": "array", "items": {"type": "string"}},
+          "assignees": {"type": "array", "items": {"type": "string"}},
+          "milestone": {"type": "integer", "minimum": 1}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "issue"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "issue": {
+            "type": "object",
+            "required": ["owner", "repo", "number", "url", "issue_node_id"],
+            "properties": {
+              "owner": {"type": "string"},
+              "repo": {"type": "string"},
+              "number": {"type": "integer"},
+              "url": {"type": "string"},
+              "issue_node_id": {"type": "string"},
+              "node_id": {
+                "type": "string",
+                "description": "Deprecated alias for issue_node_id (kept for compatibility if emitted)."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_issue",
+      "description": "Fetch an Issue by owner/repo and issue number. Returns identifiers required for GraphQL chaining.",
+      "input_schema": {
+        "type": "object",
+        "required": ["owner", "repo", "number"],
+        "properties": {
+          "owner": {"type": "string", "minLength": 1},
+          "repo": {"type": "string", "minLength": 1},
+          "number": {"type": "integer", "minimum": 1}
+        },
+        "additionalProperties": false
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["ok", "correlation_id", "issue"],
+        "properties": {
+          "ok": {"type": "boolean"},
+          "correlation_id": {"type": "string"},
+          "issue": {
+            "type": "object",
+            "required": ["owner", "repo", "number", "url", "issue_node_id", "title", "body", "state"],
+            "properties": {
+              "owner": {"type": "string"},
+              "repo": {"type": "string"},
+              "number": {"type": "integer"},
+              "url": {"type": "string"},
+              "issue_node_id": {"type": "string"},
+              "node_id": {
+                "type": "string",
+                "description": "Deprecated alias for issue_node_id (kept for compatibility if emitted)."
+              },
+              "title": {"type": "string"},
+              "body": {"type": ["string", "null"]},
+              "state": {"type": "string", "enum": ["open", "closed"]}
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ]
+}

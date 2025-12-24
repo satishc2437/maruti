@@ -39,8 +39,21 @@ def test_initialize_runtime_from_env_caches_runtime(monkeypatch: pytest.MonkeyPa
             self.token_provider = token_provider
             self.limits = limits
 
+    class DummyGraphQL:
+        def __init__(
+            self,
+            *,
+            token_provider,
+            limits,
+            _api_base_url="https://api.github.com",
+            _transport=None,
+        ) -> None:  # noqa: ANN001
+            self.token_provider = token_provider
+            self.limits = limits
+
     monkeypatch.setattr(tools, "GitHubAppAuth", DummyAuth)
     monkeypatch.setattr(tools, "GitHubClient", DummyGitHub)
+    monkeypatch.setattr(tools, "GitHubGraphQLClient", DummyGraphQL)
     monkeypatch.setattr(tools, "_RUNTIME", None)
 
     r1 = tools.initialize_runtime_from_env()
