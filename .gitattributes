@@ -1,0 +1,4 @@
+# Ensure devcontainer scripts keep Unix LF line endings.
+# Prevents misleading "/bin/sh: ...: not found" errors from CRLF shebangs.
+.devcontainer/*.sh text eol=lf
+.devcontainer/*.json text eol=lf
