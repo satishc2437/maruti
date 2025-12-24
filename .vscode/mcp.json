@@ -1,0 +1,15 @@
+{
+    "servers": {
+        "agent-memory": {
+            "command": "uvx",
+            "args": [
+                "--from",
+                "git+https://github.com/satishc2437/maruti.git@main#subdirectory=mcp-tools/agent-memory",
+                "python",
+                "-m",
+                "agent_memory"
+            ],
+            "type": "stdio"
+        }
+    }
+}

@@ -22,7 +22,6 @@ src/*.egg-info/
 htmlcov/
 
 # IDE / editor
-.vscode/
 .idea/
 
 # uv / pip
