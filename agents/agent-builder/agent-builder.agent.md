@@ -106,8 +106,8 @@ The generated agent MUST treat the following fields as having these exact meanin
       - Resolution rule (deterministic): identify the workspace folder root by locating the workspace folder that contains the agent package (or `rules.json`). Do not use “active editor” heuristics.
    - `"absolute"`: Patterns are OS-absolute paths (e.g., `/home/user/repo/**`).
 - `fs` (object): Filesystem access rules.
-   - `fs.readOnly.allow` (string[]): Repo-relative glob patterns the agent may read.
-   - `fs.readOnly.deny` (string[]): Repo-relative glob patterns the agent must not read.
+   - `fs.read.allow` (string[]): Repo-relative glob patterns the agent may read.
+   - `fs.read.deny` (string[]): Repo-relative glob patterns the agent must not read.
    - `fs.readWrite.allow` (string[]): Repo-relative glob patterns the agent may create/modify.
    - `fs.readWrite.deny` (string[]): Repo-relative glob patterns the agent must not create/modify.
 - `semantics` (object): Rule evaluation semantics.

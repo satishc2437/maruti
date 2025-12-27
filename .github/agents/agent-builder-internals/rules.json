@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "base": "repo",
+  "fs": {
+    "readOnly": {
+      "allow": [],
+      "deny": []
+    },
+    "readWrite": {
+      "allow": [
+        "agents/**",
+        ".github/agent-memory/**"
+      ],
+      "deny": []
+    }
+  },
+  "semantics": {
+    "denyOverridesAllow": true,
+    "readWriteImpliesRead": true,
+    "patternsAreRepoRelative": true,
+    "unknownTopLevelKeys": "ignore"
+  }
+}
