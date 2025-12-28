@@ -49,7 +49,7 @@ uv run python -m agent_memory
 uvx --from . python -m agent_memory
 
 # Using uvx directly from GitHub (no checkout)
-uvx --from "git+https://github.com/<owner>/<repo>.git@<ref>#subdirectory=mcp-tools/agent-memory" \
+uvx --from "git+https://github.com/satishc2437/maruti.git@main#subdirectory=mcp-tools/agent-memory" \
   python -m agent_memory
 
 # Standard execution (if dependencies installed globally)
@@ -92,6 +92,7 @@ uv run pytest --cov --cov-fail-under=95
    - **Linux**: `~/.config/claude/claude_desktop_config.json`
 
    Add the Agent Memory server:
+   - Using uv
    ```json
    {
      "mcpServers": {
@@ -109,6 +110,25 @@ uv run pytest --cov --cov-fail-under=95
    - Use absolute paths for `cwd`
    - Ensure `uv sync` has been run in the project directory
    - Test the server works: `uv run python -m agent_memory --test`
+
+   - Using uvx
+      ```json
+   {
+     "mcpServers": {
+        "agent-memory": {
+          "type": "stdio",
+          "command": "uvx",
+          "args": [
+                "--from",
+                "git+https://github.com/satishc2437/maruti.git@main#subdirectory=mcp-tools/agent-memory",
+                "python",
+                "-m",
+                "agent_memory"
+          ],
+        }
+     }
+   }
+   ```
 
 3. **Restart Claude Desktop** to load the new server.
 
@@ -129,7 +149,7 @@ For one-time usage without installation:
 uvx --from /path/to/mcp-tools/agent-memory python -m agent_memory
 
 # Or fetch directly from GitHub (no checkout)
-uvx --from "git+https://github.com/<owner>/<repo>.git@<ref>#subdirectory=mcp-tools/agent-memory" \
+uvx --from "git+https://github.com/satishc2437/maruti.git@main#subdirectory=mcp-tools/agent-memory" \
   python -m agent_memory
 ```
 
