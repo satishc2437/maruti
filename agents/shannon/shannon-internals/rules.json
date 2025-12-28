@@ -2,16 +2,8 @@
   "schemaVersion": 1,
   "base": "repo",
   "fs": {
-    "read": {
-      "allow": ["agents/**"],
-      "deny": []
-    },
-    "readWrite": {
-      "allow": [
-        "agents/**"
-      ],
-      "deny": []
-    }
+    "read": { "allow": ["**"], "deny": [] },
+    "readWrite": { "allow": ["**"], "deny": [] }
   },
   "semantics": {
     "denyOverridesAllow": true,

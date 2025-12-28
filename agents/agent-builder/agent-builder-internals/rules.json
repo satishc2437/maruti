@@ -3,13 +3,12 @@
   "base": "repo",
   "fs": {
     "read": {
-      "allow": ["**"],
+      "allow": ["agents/**"],
       "deny": []
     },
     "readWrite": {
       "allow": [
-        "agents/**",
-        ".github/agents/**"
+        "agents/**"
       ],
       "deny": []
     }
