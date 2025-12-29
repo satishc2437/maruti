@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "base": "repo",
+  "fs": {
+    "read": {
+      "allow": [
+        "README.md",
+        "MCP_DEVELOPMENT_WORKFLOW.md",
+        "pyproject.toml",
+        "mcp-tools/**"
+      ],
+      "deny": []
+    },
+    "readWrite": {
+      "allow": [
+        "mcp-tools/${env:SPECIFY_TOOL_NAME}/specs/product-docs/**"
+      ],
+      "deny": []
+    }
+  },
+  "semantics": {
+    "denyOverridesAllow": true,
+    "readWriteImpliesRead": true,
+    "patternsAreRepoRelative": true,
+    "unknownTopLevelKeys": "ignore"
+  }
+}

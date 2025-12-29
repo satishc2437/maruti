@@ -30,8 +30,8 @@ Rationale: tools are intended to be independently runnable, releasable, and safe
 Each tool folder MUST contain:
 
 - its own `pyproject.toml`
-- its own `src/<package>/...`
-- its own tests (prefer `tests/`)
+- its own `mcp-tools/<package>/src/...`
+- its own tests (prefer `mcp-tools/<package>/tests/`)
 - its own `README.md`
 
 Rationale: avoids monorepo coupling and makes each tool portable.

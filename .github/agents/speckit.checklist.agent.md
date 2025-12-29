@@ -1,5 +1,6 @@
 ---
 description: Generate a custom checklist for the current feature based on user requirements.
+infer: true
 ---
 
 ## Checklist Purpose: "Unit Tests for English"

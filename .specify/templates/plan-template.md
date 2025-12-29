@@ -1,7 +1,7 @@
 # Implementation Plan: [FEATURE]
 
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Input**: Feature specification from `/mcp-tools/<tool-name>/specs/[###-feature-name]/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
@@ -46,7 +46,7 @@ At minimum for Python-only repos, include explicit gates for:
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
+mcp-toos/<tool-name>/specs/[###-feature]/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
 ├── data-model.md        # Phase 1 output (/speckit.plan command)
@@ -66,6 +66,7 @@ specs/[###-feature]/
 ```text
 # [REMOVE IF UNUSED] Option 0: Tool monorepo (this repository)
 mcp-tools/<tool-name>/
+├── specs
 ├── pyproject.toml
 ├── README.md
 ├── src/

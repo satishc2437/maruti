@@ -11,6 +11,7 @@ handoffs:
       - Use the exact text inside the fenced text block.
       - If multiple drafts exist, use the most recent one.
     send: true
+infer: true
 ---
 
 # Agent Identity
