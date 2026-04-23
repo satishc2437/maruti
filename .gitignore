@@ -23,6 +23,7 @@ htmlcov/
 
 # IDE / editor
 .idea/
+.claude/
 
 # uv / pip
 .uv/
