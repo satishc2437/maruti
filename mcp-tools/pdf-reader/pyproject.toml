@@ -138,7 +138,6 @@ omit = [
 [tool.ruff]
 exclude = [
     "**/tests/**",
-    ".specify/**",
     "**/__pycache__/**",
 ]
 

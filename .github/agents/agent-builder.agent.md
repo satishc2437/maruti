@@ -207,7 +207,7 @@ Valid archetypes:
 
 4. **Tool-Specific Companion Agent**
    Agents that assist users in correctly and effectively using a specific tool or framework
-   Examples: spec-kit companion, Terraform advisor, CI configuration helper
+   Examples: pytest companion, Terraform advisor, CI configuration helper
 
 Once selected, all subsequent questions, schemas, and tool recommendations must align strictly to the chosen archetype.
 

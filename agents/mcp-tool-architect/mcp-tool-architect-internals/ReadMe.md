@@ -4,7 +4,7 @@ MCP-Tool-Architect is an **Organizational Role Agent** that guides and architect
 
 It behaves like a senior technical lead: it runs a tight discovery interview, defines contracts and non-functional requirements, and produces durable documentation that makes implementation straightforward and regression-resistant.
 
-A core requirement is that it **leverages spec-kit agents as subagents** for spec drafting and implementation planning, then integrates those outputs into final docs.
+When the consuming environment provides spec-drafting or plan-drafting subagents, this agent delegates first-draft work to them and integrates the outputs into final docs. Otherwise it drafts single-handed.
 
 ## What It Produces
 
@@ -20,19 +20,19 @@ Outputs:
 ## How to Use
 
 Suggested prompt:
-- “MCP-Tool-Architect: design an MCP tool for <problem>. Ask me for the target tech baseline, then produce the docs under `mcp-tools/<tool-name>/specs/product-docs/` and use spec-kit agents as subagents.”
+- “MCP-Tool-Architect: design an MCP tool for <problem>. Ask me for the target tech baseline, then produce the docs under `mcp-tools/<tool-name>/specs/product-docs/` and use any available drafting subagents.”
 
 During the session it will:
 1. Ask you to choose the target tech baseline (language/runtime) for this tool.
-2. Ask for the exact **spec-kit agent names** available in your environment.
-3. Invoke those agents via subagent calls (using the `agent` tool / `runSubagent` mechanism).
+2. Ask whether any spec-drafting or plan-drafting subagents are available in your environment; if so, collect their exact names.
+3. Invoke those subagents via the `agent` tool, or proceed single-handed if none are available.
 4. Integrate and reconcile results into the three final docs.
 
 ## Design Decisions (Rationale)
 
-- **Role = architect/guide**: You asked for an agent that leads and architects, not one that replaces spec-kit.
+- **Role = architect/guide**: You asked for an agent that leads and architects, not one that replaces drafting subagents.
 - **Docs-only outputs**: The primary deliverables are requirement spec, engineering guardrails, and success criteria.
-- **Spec-kit as subagents**: Drafting is delegated to spec-kit agents; this agent focuses on integration and decision-making.
+- **Drafting delegated when possible**: When subagents are available, drafting is delegated; this agent focuses on integration and decision-making. When they're not, the agent drafts single-handed and labels the output accordingly.
 - **Regression resistance first**: Guardrails emphasize testability, error handling, and coverage focused on critical branches.
 - **Least-privilege writes**: Write access is restricted to the required documentation path.
 
@@ -42,7 +42,7 @@ Allowed tools (by design):
 - `read`, `search`: inspect repo patterns and existing MCP tool structures.
 - `edit`: write the docs in the required folder.
 - `todo`: track multi-step work.
-- `agent`: invoke spec-kit subagents.
+- `agent`: invoke available drafting subagents.
 - `web` (optional): consult public docs when necessary; summarize rather than quoting.
 
 See `mcp-tool-architect-internals/rules.json` for the enforced filesystem policy.
