@@ -33,7 +33,6 @@ WORKDIR /app
 # Copy project configuration files first for better caching
 COPY pyproject.toml uv.lock* ./
 COPY mcp-tools/pdf-reader/pyproject.toml ./mcp-tools/pdf-reader/
-COPY mcp-tools/onenote-reader/pyproject.toml ./mcp-tools/onenote-reader/
 COPY mcp-tools/xlsx-reader/pyproject.toml ./mcp-tools/xlsx-reader/
 COPY mcp-tools/agent-memory/pyproject.toml ./mcp-tools/agent-memory/
 

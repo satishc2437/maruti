@@ -69,8 +69,6 @@ uv run pdf-reader
 # XLSX Reader MCP Server
 uv run xlsx-reader
 
-# OneNote Reader MCP Server
-uv run onenote-reader
 ```
 
 ### Running Tests

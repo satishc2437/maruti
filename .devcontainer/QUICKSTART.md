@@ -6,7 +6,7 @@ Welcome to the Maruti project! This guide will get you up and running with the d
 
 - **Instant Environment**: Python 3.14 + all dependencies pre-installed
 - **VS Code Integration**: Extensions, settings, and debugging ready
-- **MCP Servers**: PDF, XLSX, and OneNote readers ready to run
+- **MCP Servers**: PDF, XLSX, and Agent-Memory readers ready to run
 - **Testing Setup**: Pytest configured and ready
 - **Code Quality**: Black, isort, and pylint pre-configured
 
@@ -64,13 +64,11 @@ Use the convenient aliases:
 ```bash
 pdf-server      # Start PDF MCP server
 xlsx-server     # Start XLSX MCP server
-onenote-server  # Start OneNote MCP server
 ```
 
 Or use VS Code tasks (`Ctrl+Shift+P` → `Tasks: Run Task`):
 - `Run: PDF Reader MCP Server`
 - `Run: XLSX Reader MCP Server`
-- `Run: OneNote Reader MCP Server`
 
 ### Running Tests
 ```bash
@@ -91,7 +89,6 @@ Or use VS Code tasks:
 4. Choose your debug configuration:
    - `PDF Reader MCP Server`
    - `XLSX Reader MCP Server`
-   - `OneNote Reader MCP Server`
    - `Python: Current File`
 
 ### Adding Dependencies
@@ -193,7 +190,6 @@ test            # Run pytest
 uv-sync         # Sync dependencies
 pdf-server      # Start PDF server
 xlsx-server     # Start XLSX server
-onenote-server  # Start OneNote server
 ```
 
 ## 🎉 You're Ready!

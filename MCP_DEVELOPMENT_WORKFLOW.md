@@ -38,7 +38,6 @@ The DevContainer automatically finds and installs any directory containing:
 |--------|--------|-------------|
 | pdf-reader | ✅ Active | PDF processing and content extraction |
 | xlsx-reader | ✅ Active | Excel workbook reading and editing |
-| onenote-reader | ✅ Active | OneNote integration (scaffold phase) |
 | agent-memory | ✅ Active | Deterministic repository-backed agent memory |
 
 ## 🛠️ Development Commands
@@ -51,7 +50,6 @@ uv run <server-name>
 # Examples:
 uv run pdf-reader
 uv run xlsx-reader
-uv run onenote-reader
 ```
 
 ### Testing

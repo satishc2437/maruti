@@ -17,7 +17,6 @@ independently.
 ```text
 mcp-tools/
 ├── agent-memory/
-├── onenote-reader/
 ├── pdf-reader/
 └── xlsx-reader/
 ```
@@ -34,7 +33,6 @@ From the repository root:
 ```bash
 uv run pdf-reader
 uv run xlsx-reader
-uv run onenote-reader
 uv run agent-memory
 ```
 

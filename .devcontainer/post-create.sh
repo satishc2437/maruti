@@ -79,7 +79,6 @@ alias pip='uv pip'
 # MCP server shortcuts
 alias pdf-server='uv run pdf-reader'
 alias xlsx-server='uv run xlsx-reader'
-alias onenote-server='uv run onenote-reader'
 alias agent-memory-server='uv run agent-memory'
 
 # Testing shortcuts
@@ -88,7 +87,7 @@ alias test-pdf='uv run pytest mcp-tools/pdf-reader/test_pdf.py -v'
 alias test-xlsx='uv run pytest mcp-tools/xlsx-reader/test_server.py -v'
 
 # Project info
-alias project-info='echo "Maruti MCP Tools" && echo "===============" && echo "PDF Reader: uv run pdf-reader" && echo "XLSX Reader: uv run xlsx-reader" && echo "OneNote Reader: uv run onenote-reader" && echo "Agent Memory: uv run agent-memory" && echo "Run Tests: uv run pytest" && echo "Sync Dependencies: uv sync --dev"'
+alias project-info='echo "Maruti MCP Tools" && echo "===============" && echo "PDF Reader: uv run pdf-reader" && echo "XLSX Reader: uv run xlsx-reader" && echo "Agent Memory: uv run agent-memory" && echo "Run Tests: uv run pytest" && echo "Sync Dependencies: uv sync --dev"'
 
 EOF
 
@@ -111,7 +110,6 @@ echo ""
 echo "Available commands:"
 echo "  pdf-server      - Start PDF MCP server"
 echo "  xlsx-server     - Start XLSX MCP server"
-echo "  onenote-server  - Start OneNote MCP server"
 echo "  test           - Run all tests"
 echo "  test-pdf       - Run PDF tests"
 echo "  test-xlsx      - Run XLSX tests"

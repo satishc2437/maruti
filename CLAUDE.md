@@ -10,7 +10,7 @@ Python **3.14** is the repo standard (`requires-python = ">=3.14"` on every proj
 
 ## Workspace Layout (big-picture)
 
-- `mcp-tools/<name>/` — one MCP server per folder. Current members: `agent-memory`, `github-app-mcp`, `pdf-reader`, `xlsx-reader`, `onenote-reader`. Members are declared in the root `pyproject.toml` under `[tool.uv.workspace]`.
+- `mcp-tools/<name>/` — one MCP server per folder. Current members: `agent-memory`, `github-app-mcp`, `pdf-reader`, `xlsx-reader`. Members are declared in the root `pyproject.toml` under `[tool.uv.workspace]`.
 - `agents/<name>/` — project-owned Copilot/agent definitions (`*.agent.md` + an `<name>-internals/` directory with `rules.json` and supporting assets). Agents load their internals deterministically before any action (see any `*.agent.md`'s "Deterministic Rules" preamble).
 - `.github/agents/` — Copilot chat-mode agents (including speckit.* spec-kit workflow agents) and `copilot-instructions.md` (auto-generated from feature plans — treat as machine-written, don't hand-edit without reason).
 - `.github/agent-memory/<agent>/` — runtime memory written by the `agent-memory` MCP server for agents running against this repo. Contents are data, not source.
@@ -42,7 +42,6 @@ uv run agent-memory
 uv run github-app-mcp
 uv run pdf-reader
 uv run xlsx-reader
-uv run onenote-reader
 
 # Tests — all workspace packages
 uv run pytest
