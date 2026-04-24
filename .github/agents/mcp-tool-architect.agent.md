@@ -2,10 +2,6 @@
 name: MCP-Tool-Architect
 description: "Guides and architects new MCP tools from user requirements. Produces requirement specs, engineering guardrails (testability/coverage/regression prevention), and success criteria docs. Leverages spec-kit agents as subagents for spec writing and implementation planning."
 tools: ['vscode', 'read', 'search', 'edit', 'todo', 'agent', 'web']
-handoffs:
-  - label: Start feature specification
-    agent: speckit.specify
-    prompt: Draft the requirements specification for the new feature based on the architecture and decisions made by MCP-Tool-Architect present in `mcp-tools/{tool-name}/specs/product-docs/**`.
 infer: true
 ---
 
