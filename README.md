@@ -90,14 +90,7 @@ Notes:
 ## Governance
 
 Project development is governed by the constitution in
-[.specify/memory/constitution.md](.specify/memory/constitution.md).
-
-## Cleanup (Review Only)
-
-Potential repo-root removal candidates are listed in
-[REMOVAL_CANDIDATES.md](REMOVAL_CANDIDATES.md).
-
-Nothing is deleted as part of generating that report; deletions require explicit confirmation.
+[docs/Constitution.md](docs/Constitution.md).
 
 ## Note on `uv sync` in a Workspace
 

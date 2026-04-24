@@ -12,16 +12,15 @@ Python **3.14** is the repo standard (`requires-python = ">=3.14"` on every proj
 
 - `mcp-tools/<name>/` — one MCP server per folder. Current members: `agent-memory`, `pdf-reader`, `xlsx-reader`. Members are declared in the root `pyproject.toml` under `[tool.uv.workspace]`.
 - `agents/<name>/` — project-owned Copilot/agent definitions (`*.agent.md` + an `<name>-internals/` directory with `rules.json` and supporting assets). Agents load their internals deterministically before any action (see any `*.agent.md`'s "Deterministic Rules" preamble).
-- `.github/agents/` — Copilot chat-mode agents (including speckit.* spec-kit workflow agents) and `copilot-instructions.md` (auto-generated from feature plans — treat as machine-written, don't hand-edit without reason).
+- `.github/agents/` — Copilot chat-mode agents for use in **this** repo. Populated by symlinks into `agents/` (see `scripts/link_agents.py`).
 - `.github/agent-memory/<agent>/` — runtime memory written by the `agent-memory` MCP server for agents running against this repo. Contents are data, not source.
-- `.github/prompts/` — speckit workflow prompt files.
-- `.specify/` — spec-kit assets: `memory/constitution.md` (the binding project constitution), `templates/`, and PowerShell `scripts/`.
+- `docs/` — repo-level documentation: `Constitution.md` (binding principles, agent-readable MUST/SHOULD), `specs-template.md`, etc.
 - `.devcontainer/` — the canonical development environment. `post-create.sh` and `add-mcp-server.sh` auto-discover any `mcp-tools/<tool>/pyproject.toml` that mentions "mcp" and install it editable.
 - Per-tool `mcp-tools/<tool>/specs/` holds that tool's specs (see `docs/specs-template.md`).
 
 ## Core Architectural Rules
 
-These are enforced by `.specify/memory/constitution.md` and matter for every change:
+These are enforced by `docs/Constitution.md` and matter for every change:
 
 1. **Tool isolation (MUST).** Code in one `mcp-tools/<a>/` MUST NOT import from another `mcp-tools/<b>/`. There is no shared internal library. If real sharing is needed, promote it to an external package — do not create a repo-internal shared module.
 2. **Tool-local everything.** Each tool owns its own `pyproject.toml`, `src/<pkg>/`, `tests/`, and `README.md`. Keep PRs scoped to a single tool when possible.
@@ -89,4 +88,4 @@ cd mcp-tools/<tool> && uv run pytest --cov --cov-fail-under=95
 
 ## Governance
 
-`.specify/memory/constitution.md` is the binding source of truth for principles and quality gates. When a constitution rule and this file disagree, the constitution wins — update this file to match.
+`docs/Constitution.md` is the binding source of truth for principles and quality gates. When a constitution rule and this file disagree, the constitution wins — update this file to match.
