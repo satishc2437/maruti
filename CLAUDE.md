@@ -10,14 +10,14 @@ Python **3.14** is the repo standard (`requires-python = ">=3.14"` on every proj
 
 ## Workspace Layout (big-picture)
 
-- `mcp-tools/<name>/` — one MCP server per folder. Current members: `agent-memory`, `github-app-mcp`, `pdf-reader`, `xlsx-reader`. Members are declared in the root `pyproject.toml` under `[tool.uv.workspace]`.
+- `mcp-tools/<name>/` — one MCP server per folder. Current members: `agent-memory`, `pdf-reader`, `xlsx-reader`. Members are declared in the root `pyproject.toml` under `[tool.uv.workspace]`.
 - `agents/<name>/` — project-owned Copilot/agent definitions (`*.agent.md` + an `<name>-internals/` directory with `rules.json` and supporting assets). Agents load their internals deterministically before any action (see any `*.agent.md`'s "Deterministic Rules" preamble).
 - `.github/agents/` — Copilot chat-mode agents (including speckit.* spec-kit workflow agents) and `copilot-instructions.md` (auto-generated from feature plans — treat as machine-written, don't hand-edit without reason).
 - `.github/agent-memory/<agent>/` — runtime memory written by the `agent-memory` MCP server for agents running against this repo. Contents are data, not source.
 - `.github/prompts/` — speckit workflow prompt files.
 - `.specify/` — spec-kit assets: `memory/constitution.md` (the binding project constitution), `templates/`, and PowerShell `scripts/`.
 - `.devcontainer/` — the canonical development environment. `post-create.sh` and `add-mcp-server.sh` auto-discover any `mcp-tools/<tool>/pyproject.toml` that mentions "mcp" and install it editable.
-- `specs/` — feature specs referenced by `github-app-mcp` (e.g. `002-github-app-mcp`, `003-github-project-tasks`). Each tool may also have a local `specs/` directory.
+- Per-tool `mcp-tools/<tool>/specs/` holds that tool's specs (see `docs/specs-template.md`).
 
 ## Core Architectural Rules
 
@@ -39,7 +39,6 @@ uv sync --dev --all-packages
 
 # Run a specific tool (console scripts declared per-tool)
 uv run agent-memory
-uv run github-app-mcp
 uv run pdf-reader
 uv run xlsx-reader
 
@@ -75,7 +74,7 @@ cd mcp-tools/<tool> && uv run pytest --cov --cov-fail-under=95
 
 1. Create `mcp-tools/<name>/` with its own `pyproject.toml` declaring `requires-python = ">=3.14"` and mentioning `mcp` (devcontainer auto-discovery keys on the literal string "mcp" in the project file).
 2. Add the path to `[tool.uv.workspace].members` in the root `pyproject.toml`.
-3. Layout: `src/<pkg>/{__init__.py, __main__.py, server.py}` plus `tests/`. Follow the `agent-memory` or `github-app-mcp` pattern — `__main__.py` dispatches to `server.run_server()` via `asyncio.run`.
+3. Layout: `src/<pkg>/{__init__.py, __main__.py, server.py}` plus `tests/`. Follow the `agent-memory` pattern — `__main__.py` dispatches to `server.run_server()` via `asyncio.run`.
 4. Declare a `[project.scripts]` entry so `uv run <tool>` works.
 5. Write a README with a copy/pasteable `uvx` snippet targeting `github.com/satishc2437/maruti`.
 6. Rebuild the devcontainer (or run `.devcontainer/post-create.sh`) so auto-discovery installs it editable.

@@ -31,7 +31,6 @@ convention = "google"
 [tool.uv.workspace]
 members = [
     "mcp-tools/agent-memory",
-    "mcp-tools/github-app-mcp",
     "mcp-tools/pdf-reader",
     "mcp-tools/xlsx-reader",
 ]
