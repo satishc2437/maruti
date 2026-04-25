@@ -94,8 +94,39 @@ optional `<name>-internals/` directory. The `.github/agents/` tree is a
 symlink mirror for this repo's own Copilot use — do not edit those symlinks;
 edit the source under `agents/` instead.
 
-See [`../agents/README.md`](../agents/README.md) for authoring conventions
-and how other repos can consume the markdowns.
+The mirror is managed by `scripts/link_agents.py`:
+
+```bash
+python scripts/link_agents.py check    # report drift; CI runs this on every PR
+python scripts/link_agents.py sync     # create/repair the .github/agents/ symlinks
+python scripts/link_agents.py repair   # post-clone fix for Windows fallbacks
+```
+
+After authoring a new agent under `agents/<new>/`, run `sync` once and
+commit the resulting symlinks.
+
+### Windows: enable symlinks once per machine
+
+The mirror relies on real filesystem symlinks. On Windows that needs
+two one-time settings:
+
+1. **Developer Mode** — Settings → Privacy & security → For developers →
+   *Developer Mode*. This grants non-admin processes the
+   `SeCreateSymbolicLinkPrivilege` that `os.symlink()` needs.
+2. **Git symlink support** —
+   ```
+   git config --global core.symlinks true
+   ```
+   so symlinks come through `git clone` / `git checkout` intact rather
+   than being materialized as text files containing the target path.
+
+If you cloned the repo on Windows *before* setting `core.symlinks=true`,
+the `.github/agents/` entries will be real text files containing path
+strings. `python scripts/link_agents.py repair` detects this case and
+converts them back into real symlinks (you'll still need Developer Mode
+enabled at that point).
+
+On Linux, macOS, and CI (Ubuntu) symlinks just work — no setup.
 
 ## Troubleshooting
 

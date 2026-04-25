@@ -56,5 +56,5 @@ jobs:
         working-directory: mcp-tools/xlsx-reader
         run: uv run pytest -q
 
-      # Phase 6 will add: python scripts/link_agents.py check
-      # to enforce that .github/agents/ is a clean symlink mirror of agents/.
+      - name: Agent symlink mirror check
+        run: python scripts/link_agents.py check
