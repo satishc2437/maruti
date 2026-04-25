@@ -73,19 +73,42 @@ Files that drive this:
 
 ## Adding a new MCP tool
 
-1. Create `mcp-tools/<name>/` with its own `pyproject.toml` that
-   declares `requires-python = ">=3.14"` and mentions the string `mcp` so
-   devcontainer auto-discovery picks it up.
-2. Add the path to `[tool.uv.workspace].members` in the root `pyproject.toml`.
-3. Layout: `src/<pkg>/{__init__.py, __main__.py, server.py}`, `tests/`,
-   `specs/` (with a README pointing at `docs/specs-template.md`).
-   Follow the `agent-memory` pattern — `__main__.py` dispatches to
-   `server.run_server()` via `asyncio.run`.
-4. Declare `[project.scripts]` so `uv run <tool>` works.
-5. Add a README with a copy/pasteable `uvx` snippet targeting
-   `github.com/satishc2437/maruti`.
-6. Rebuild the devcontainer (or run `.devcontainer/post-create.sh`) so
-   auto-discovery installs the new tool editable.
+Use the script — it handles the steps below in one shot:
+
+```bash
+python scripts/new_mcp_tool.py <name> --description "<one-line summary>"
+uv sync --dev --all-packages
+cd mcp-tools/<name> && uv run pytest    # template tests pass; coverage gate is on
+```
+
+The script copies [`templates/mcp-tool/`](../templates/mcp-tool/) into
+`mcp-tools/<name>/`, substitutes the four placeholders (tool hyphen
+name, snake-case module, Title Case display, description), renames the
+`src/__module__/` directory to match, and registers the new tool under
+`[tool.uv.workspace].members` in the root `pyproject.toml`.
+
+The instantiated tool starts with:
+
+- An MCP `Server` skeleton in `src/<module>/server.py` with one
+  `example_tool` to delete or rename.
+- A `__main__.py` with the standard `parse_args` / `main` / dispatch
+  shape used by the existing tools.
+- `tests/test_server_handlers.py` covering `list_tools`, the example
+  tool, and the unknown-name error envelope. Add tests as you replace
+  the example tool with real ones; the 95% coverage gate is on.
+- `specs/README.md` pointing at the canonical
+  [spec template](./specs-template.md).
+- A `README.md` with a working `uvx` snippet for the consumer.
+
+Rebuild the devcontainer (or re-run `.devcontainer/post-create.sh`) if
+you want auto-discovery to pick up the new tool inside the container.
+
+### Manual fallback (no script)
+
+If you prefer to scaffold by hand: copy `templates/mcp-tool/` into
+`mcp-tools/<name>/`, rename `src/__module__/` to `src/<snake_name>/`,
+search-and-replace the four `{{...}}` placeholders, and add the path to
+`[tool.uv.workspace].members`. Same outcome, more typing.
 
 ## Agent markdowns
 

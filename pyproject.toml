@@ -19,6 +19,7 @@ dev = [
 exclude = [
     "**/tests/**",
     "**/__pycache__/**",
+    "templates/**",
 ]
 
 [tool.ruff.lint]
@@ -31,7 +32,9 @@ convention = "google"
 # importlib import mode lets each tool keep its own tests/ files with the
 # same basename across tools (e.g. test_server_handlers.py in every tool)
 # without colliding when pytest is run from the workspace root.
-addopts = ["--import-mode=importlib"]
+# templates/ is ignored because it contains placeholder code with
+# {{TOOL_MODULE}}-style markers that aren't valid Python.
+addopts = ["--import-mode=importlib", "--ignore=templates"]
 
 [tool.uv.workspace]
 members = [
