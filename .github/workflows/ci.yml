@@ -44,12 +44,17 @@ jobs:
       - name: Pylint (zero E/W/F)
         run: uv run pylint mcp-tools/*/src
 
-      - name: Tests
+      - name: Tests + coverage (agent-memory)
+        working-directory: mcp-tools/agent-memory
+        run: uv run pytest -q
+
+      - name: Tests + coverage (pdf-reader)
+        working-directory: mcp-tools/pdf-reader
+        run: uv run pytest -q
+
+      - name: Tests + coverage (xlsx-reader)
+        working-directory: mcp-tools/xlsx-reader
         run: uv run pytest -q
 
       # Phase 6 will add: python scripts/link_agents.py check
       # to enforce that .github/agents/ is a clean symlink mirror of agents/.
-
-      # Phase 4 will add per-tool coverage gates (--cov-fail-under=95) once
-      # the metric is honest (omit lists removed and integration tests
-      # written for server.py / __main__.py).
