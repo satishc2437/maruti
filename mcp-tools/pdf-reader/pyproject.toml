@@ -124,6 +124,7 @@ addopts = [
     "--cov=pdf_reader",
     "--cov-report=term-missing:skip-covered",
     "--cov-fail-under=95",
+    "--import-mode=importlib",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",

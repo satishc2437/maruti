@@ -27,6 +27,12 @@ select = ["D"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.pytest.ini_options]
+# importlib import mode lets each tool keep its own tests/ files with the
+# same basename across tools (e.g. test_server_handlers.py in every tool)
+# without colliding when pytest is run from the workspace root.
+addopts = ["--import-mode=importlib"]
+
 [tool.uv.workspace]
 members = [
     "mcp-tools/agent-memory",
