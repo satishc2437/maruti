@@ -50,10 +50,9 @@ See `mcp-tool-architect-internals/rules.json` for the enforced filesystem policy
 ### `rules.json` summary
 
 - Read allowed:
-  - `README.md`, `MCP_DEVELOPMENT_WORKFLOW.md`, `pyproject.toml`
-  - `agents/**`, `mcp-tools/**`, `spec/**`, `specs/**`
+  - `README.md`, `CLAUDE.md`, `pyproject.toml`
+  - `docs/**`, `agents/**`, `mcp-tools/**`
 - Write allowed:
   - `mcp-tools/*/specs/product-docs/**`
-  - `agents/mcp-tool-architect/**`
 
 If you want MCP-Tool-Architect to scaffold code (not just docs), expand write permissions accordingly.

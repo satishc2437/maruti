@@ -1,0 +1,112 @@
+# Development guide
+
+How to work on Maruti — running tools, writing tests, and adding new MCP
+servers. Governance and quality gates live in [`Constitution.md`](./Constitution.md);
+this file is the practical companion.
+
+## Workspace shape
+
+Maruti is a `uv` workspace. Each MCP tool under `mcp-tools/<tool>/` is its
+own independently releasable Python project with its own `pyproject.toml`,
+`src/`, `tests/`, `specs/`, and `README.md`. Tools MUST NOT import each
+other (see Constitution §1).
+
+Workspace members are declared in the root `pyproject.toml` under
+`[tool.uv.workspace]`.
+
+## Commands
+
+Run from the repo root unless noted.
+
+```bash
+# Full workspace sync — always use --all-packages at the root.
+# (Without --all-packages, uv removes per-tool deps while syncing
+# the root project, causing import errors across the workspace.)
+uv sync --dev --all-packages
+
+# Start a specific tool
+uv run agent-memory
+uv run pdf-reader
+uv run xlsx-reader
+
+# Tests — all workspace packages
+uv run pytest
+
+# Tests — single tool
+uv run pytest mcp-tools/pdf-reader -v
+
+# Tests — single test node
+uv run pytest mcp-tools/pdf-reader/tests/test_pdf_tools_and_processor.py::test_pdf_processor_and_tool_endpoints -v
+
+# Per-tool work (fastest iteration; uses the tool's local dev deps)
+cd mcp-tools/<tool> && uv sync --dev && uv run pytest
+```
+
+## Quality gates
+
+All three gates are CI-enforced and must pass before merge.
+
+```bash
+# Docstring lint (Google convention, ruff pydocstyle D* rules).
+# Scope is intentionally limited to mcp-tools/*/src — tests are excluded.
+uv run ruff check --select D mcp-tools/*/src
+
+# Pylint — MUST exit 0 (zero E/W/F messages).
+# Uses root .pylintrc which disables C (convention) and R (refactor) gates.
+uv run pylint mcp-tools/*/src
+
+# Coverage gate — ≥95% honest, per tool, no omit shortcuts.
+cd mcp-tools/<tool> && uv run pytest --cov --cov-fail-under=95
+```
+
+## Devcontainer auto-discovery
+
+The devcontainer's `post-create.sh` and `Dockerfile` auto-install any directory
+under `mcp-tools/*/` whose `pyproject.toml` mentions the literal string `mcp`.
+This is what makes new tools "just work" after a container rebuild.
+
+Files that drive this:
+
+- `.devcontainer/Dockerfile` — build-time pyproject.toml copy + editable install
+- `.devcontainer/post-create.sh` — runtime install + convenience aliases
+- `.devcontainer/add-mcp-server.sh` — helper for manual registration if needed
+
+## Adding a new MCP tool
+
+1. Create `mcp-tools/<name>/` with its own `pyproject.toml` that
+   declares `requires-python = ">=3.14"` and mentions the string `mcp` so
+   devcontainer auto-discovery picks it up.
+2. Add the path to `[tool.uv.workspace].members` in the root `pyproject.toml`.
+3. Layout: `src/<pkg>/{__init__.py, __main__.py, server.py}`, `tests/`,
+   `specs/` (with a README pointing at `docs/specs-template.md`).
+   Follow the `agent-memory` pattern — `__main__.py` dispatches to
+   `server.run_server()` via `asyncio.run`.
+4. Declare `[project.scripts]` so `uv run <tool>` works.
+5. Add a README with a copy/pasteable `uvx` snippet targeting
+   `github.com/satishc2437/maruti`.
+6. Rebuild the devcontainer (or run `.devcontainer/post-create.sh`) so
+   auto-discovery installs the new tool editable.
+
+## Agent markdowns
+
+Authoring happens in `agents/<name>/`; each agent owns its `.agent.md` and
+optional `<name>-internals/` directory. The `.github/agents/` tree is a
+symlink mirror for this repo's own Copilot use — do not edit those symlinks;
+edit the source under `agents/` instead.
+
+See [`../agents/README.md`](../agents/README.md) for authoring conventions
+and how other repos can consume the markdowns.
+
+## Troubleshooting
+
+**New tool not detected after devcontainer rebuild.**
+Confirm the tool's `pyproject.toml` contains the literal string `mcp`. Then
+run `.devcontainer/post-create.sh` manually or rebuild without cache.
+
+**`ModuleNotFoundError` after `uv sync` at the root.**
+You probably ran `uv sync` without `--all-packages`. That prunes per-tool
+deps. Always sync the workspace with `uv sync --dev --all-packages`.
+
+**Pylint gate fails locally but passes elsewhere.**
+Ensure the root `.pylintrc` is being used. Run from repo root, not from
+inside a tool directory.

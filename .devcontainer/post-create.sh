@@ -83,8 +83,8 @@ alias agent-memory-server='uv run agent-memory'
 
 # Testing shortcuts
 alias test='uv run pytest'
-alias test-pdf='uv run pytest mcp-tools/pdf-reader/test_pdf.py -v'
-alias test-xlsx='uv run pytest mcp-tools/xlsx-reader/test_server.py -v'
+alias test-pdf='uv run pytest mcp-tools/pdf-reader -v'
+alias test-xlsx='uv run pytest mcp-tools/xlsx-reader -v'
 
 # Project info
 alias project-info='echo "Maruti MCP Tools" && echo "===============" && echo "PDF Reader: uv run pdf-reader" && echo "XLSX Reader: uv run xlsx-reader" && echo "Agent Memory: uv run agent-memory" && echo "Run Tests: uv run pytest" && echo "Sync Dependencies: uv sync --dev"'

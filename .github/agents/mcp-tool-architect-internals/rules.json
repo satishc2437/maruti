@@ -5,15 +5,17 @@
     "read": {
       "allow": [
         "README.md",
-        "MCP_DEVELOPMENT_WORKFLOW.md",
+        "CLAUDE.md",
+        "docs/**",
         "pyproject.toml",
-        "mcp-tools/**"
+        "mcp-tools/**",
+        "agents/**"
       ],
       "deny": []
     },
     "readWrite": {
       "allow": [
-        "mcp-tools/${env:SPECIFY_TOOL_NAME}/specs/product-docs/**"
+        "mcp-tools/*/specs/product-docs/**"
       ],
       "deny": []
     }

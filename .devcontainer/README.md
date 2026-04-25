@@ -69,13 +69,15 @@ uv run pdf-reader
 # XLSX Reader MCP Server
 uv run xlsx-reader
 
+# Agent Memory MCP Server
+uv run agent-memory
 ```
 
 ### Running Tests
 ```bash
-# Run specific tests
-uv run pytest mcp-tools/pdf-reader/test_pdf.py -v
-uv run pytest mcp-tools/xlsx-reader/test_server.py -v
+# Run specific tool's tests
+uv run pytest mcp-tools/pdf-reader -v
+uv run pytest mcp-tools/xlsx-reader -v
 
 # Run all tests
 uv run pytest

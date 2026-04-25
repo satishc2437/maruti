@@ -1,7 +1,7 @@
 [project]
 name = "maruti"
 version = "0.1.0"
-description = "Add your description here"
+description = "Maruti — a uv workspace of self-contained MCP tools and a factory for portable agent markdown definitions."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = []
