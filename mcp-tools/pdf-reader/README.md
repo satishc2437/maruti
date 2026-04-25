@@ -2,6 +2,8 @@
 
 A comprehensive Model Context Protocol (MCP) server that provides advanced PDF reading capabilities for LLM agents. This server enables efficient extraction and processing of PDF content including text, images, tables, document structure, and OCR support for scanned documents.
 
+> Detailed usage examples, MCP client configuration variants (Claude Desktop, VS Code), and a tools reference table live in [`MCP_USAGE.md`](MCP_USAGE.md).
+
 ## Features
 
 ### Core Capabilities

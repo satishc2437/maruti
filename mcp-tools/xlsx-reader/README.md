@@ -146,6 +146,12 @@ cd mcp-tools/xlsx-reader
 uv run pytest --cov --cov-fail-under=95
 ```
 
+## Usage examples
+
+For practical examples of every supported tool (workbook reading,
+cell editing, range updates, worksheet management, CSV export), see
+[`USAGE_EXAMPLES.md`](USAGE_EXAMPLES.md).
+
 ## License
 
 MIT License
