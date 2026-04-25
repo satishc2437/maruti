@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel in-flight runs for the same ref when a new commit lands.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: Lint & test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.9.5"
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
+            mcp-tools/*/pyproject.toml
+
+      - name: Pin Python
+        run: uv python install 3.14
+
+      - name: Sync workspace
+        run: uv sync --dev --all-packages
+
+      - name: Docstring lint (ruff D)
+        run: uv run ruff check --select D mcp-tools/*/src
+
+      - name: Pylint (zero E/W/F)
+        run: uv run pylint mcp-tools/*/src
+
+      - name: Tests
+        run: uv run pytest -q
+
+      # Phase 6 will add: python scripts/link_agents.py check
+      # to enforce that .github/agents/ is a clean symlink mirror of agents/.
+
+      # Phase 4 will add per-tool coverage gates (--cov-fail-under=95) once
+      # the metric is honest (omit lists removed and integration tests
+      # written for server.py / __main__.py).
