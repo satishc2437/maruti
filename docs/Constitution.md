@@ -156,16 +156,28 @@ Canonical Pylint gate (repo-wide):
 - Run: `uv run pylint mcp-tools/*/src`.
 - The command MUST exit 0 (no E/W/F messages).
 
-## Agent Markdowns
+## Custom Agent Packages
 
-This repository is also a factory for agent markdown definitions under
-`agents/<name>/`. The `agents/` directory is the single source of truth; the
-`.github/agents/` directory exists to make a subset of those agents available
-to this repo's own Copilot and is populated via symlinks (see `scripts/link_agents.py`).
+This repository is also a factory for custom agent packages under
+`packages/<name>/` — bundles of Claude Code and GitHub Copilot customizations
+(subagents, skills, slash commands, chat modes, prompt files). Each package
+is platform-bifurcated (`claude-code/`, `github-copilot/`) and independently
+installable.
 
-Agent markdowns SHOULD reference other agents generically (e.g. "a
-spec-drafting subagent") rather than naming a specific external framework —
-this keeps them portable across consuming environments.
+The `packages/` directory is the single source of truth. The publish targets
+under `.claude/` (`agents/`, `skills/`, `commands/`) and `.github/` (`agents/`,
+`prompts/`) are symlink mirrors managed by `scripts/link_packages.py`; never
+edit them directly.
+
+Custom agent packages MUST follow:
+
+- **Body parity (MUST).** When the same narrative content (skill body, chat
+  mode body) appears in both the Claude Code and Copilot variants of one
+  package, it MUST be byte-identical. Only frontmatter differs.
+- **Generic referencing (SHOULD).** Primitives SHOULD reference other
+  primitives generically (e.g. "a spec-drafting subagent") rather than
+  naming a specific external framework, to stay portable across consuming
+  environments.
 
 ## Amendments
 

@@ -11,9 +11,8 @@ Python **3.14** is the repo standard (`requires-python = ">=3.14"` on every proj
 ## Workspace Layout (big-picture)
 
 - `mcp-tools/<name>/` — one MCP server per folder. Current members: `agent-memory`, `pdf-reader`, `xlsx-reader`. Members are declared in the root `pyproject.toml` under `[tool.uv.workspace]`.
-- `agents/<name>/` — project-owned Copilot/agent definitions (`*.agent.md` + an `<name>-internals/` directory with `rules.json` and supporting assets). Agents load their internals deterministically before any action (see any `*.agent.md`'s "Deterministic Rules" preamble).
-- `.github/agents/` — Copilot chat-mode agents for use in **this** repo. Populated by symlinks into `agents/` (see `scripts/link_agents.py`).
-- `.github/agent-memory/<agent>/` — runtime memory written by the `agent-memory` MCP server for agents running against this repo. Contents are data, not source.
+- `packages/<name>/` — project-owned packages of Claude Code and GitHub Copilot customizations (subagents, skills, slash commands, chat modes, prompt files). Each package has platform-specific subdirectories (`claude-code/`, `github-copilot/`) that are independently installable. The [`assistant-wizard/`](packages/assistant-wizard/) package interviews the user and emits new packages of this shape.
+- `.claude/agents/`, `.claude/skills/`, `.claude/commands/`, `.github/agents/`, `.github/prompts/` — symlink mirrors that publish each package into the locations Claude Code and Copilot look for them in this repo. Managed by `scripts/link_packages.py`; do not edit by hand.
 - `docs/` — repo-level documentation: `Constitution.md` (binding principles, agent-readable MUST/SHOULD), `specs-template.md`, etc.
 - `.devcontainer/` — the canonical development environment. `post-create.sh` and `add-mcp-server.sh` auto-discover any `mcp-tools/<tool>/pyproject.toml` that mentions "mcp" and install it editable.
 - Per-tool `mcp-tools/<tool>/specs/` holds that tool's specs (see `docs/specs-template.md`).

@@ -1,0 +1,1 @@
+../../packages/assistant-wizard/github-copilot/agents/assistant-wizard.agent.md

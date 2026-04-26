@@ -1,1 +1,1 @@
-../../agents/mcp-tool-architect/mcp-tool-architect.agent.md
+../../packages/mcp-tool-architect/github-copilot/agents/mcp-tool-architect.agent.md

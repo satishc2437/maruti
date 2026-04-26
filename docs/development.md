@@ -110,22 +110,31 @@ If you prefer to scaffold by hand: copy `templates/mcp-tool/` into
 search-and-replace the four `{{...}}` placeholders, and add the path to
 `[tool.uv.workspace].members`. Same outcome, more typing.
 
-## Agent markdowns
+## Custom agent packages
 
-Authoring happens in `agents/<name>/`; each agent owns its `.agent.md` and
-optional `<name>-internals/` directory. The `.github/agents/` tree is a
-symlink mirror for this repo's own Copilot use — do not edit those symlinks;
-edit the source under `agents/` instead.
+Authoring happens in `packages/<name>/`. Each package is platform-bifurcated:
+a `claude-code/` subdirectory containing any combination of subagent, skill,
+or slash command (plus a `.claude-plugin/plugin.json` manifest), and a
+`github-copilot/` subdirectory containing any combination of chat mode and
+prompt file (plus `install.sh` / `install.ps1` deploy scripts).
 
-The mirror is managed by `scripts/link_agents.py`:
+The recommended path for authoring is to use the
+[`assistant-wizard/`](../packages/assistant-wizard/) package itself: it asks
+the target environment(s), captures intent, recommends the right primitive
+per environment, and emits the package layout for you.
+
+The `.claude/` and `.github/` publish targets are symlink mirrors for this
+repo's own Claude Code and Copilot use — do not edit those symlinks; edit the
+source under `packages/` instead. The mirror is managed by
+`scripts/link_packages.py`:
 
 ```bash
-python scripts/link_agents.py check    # report drift; CI runs this on every PR
-python scripts/link_agents.py sync     # create/repair the .github/agents/ symlinks
-python scripts/link_agents.py repair   # post-clone fix for Windows fallbacks
+python scripts/link_packages.py check    # report drift; CI runs this on every PR
+python scripts/link_packages.py sync     # create/repair the publish-target symlinks
+python scripts/link_packages.py repair   # post-clone fix for Windows fallbacks
 ```
 
-After authoring a new agent under `agents/<new>/`, run `sync` once and
+After authoring a new package under `packages/<new>/`, run `sync` once and
 commit the resulting symlinks.
 
 ### Windows: enable symlinks once per machine
@@ -144,10 +153,10 @@ two one-time settings:
    than being materialized as text files containing the target path.
 
 If you cloned the repo on Windows *before* setting `core.symlinks=true`,
-the `.github/agents/` entries will be real text files containing path
-strings. `python scripts/link_agents.py repair` detects this case and
-converts them back into real symlinks (you'll still need Developer Mode
-enabled at that point).
+the publish-target entries (under `.claude/` and `.github/`) will be real
+text files containing path strings. `python scripts/link_packages.py repair`
+detects this case and converts them back into real symlinks (you'll still
+need Developer Mode enabled at that point).
 
 On Linux, macOS, and CI (Ubuntu) symlinks just work — no setup.
 

@@ -1,1 +1,0 @@
-../../agents/profile-manager/profile-manager.agent.md

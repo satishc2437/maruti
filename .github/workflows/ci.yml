@@ -57,4 +57,4 @@ jobs:
         run: uv run pytest -q
 
       - name: Agent symlink mirror check
-        run: python scripts/link_agents.py check
+        run: python scripts/link_packages.py check

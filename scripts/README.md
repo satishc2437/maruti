@@ -2,16 +2,18 @@
 
 Repo-level Python scripts. Cross-platform (no PowerShell).
 
-## `link_agents.py`
+## `link_packages.py`
 
-Mirrors `agents/<name>/` into `.github/agents/` via relative symlinks.
-The canonical source is `agents/<name>/`; `.github/agents/` exists so
-this repo's own Copilot can pick the agents up.
+Mirrors `packages/<name>/` primitives into `.claude/agents/`,
+`.claude/skills/`, `.claude/commands/`, `.github/agents/`, and
+`.github/prompts/` via relative symlinks. The canonical source is
+`packages/<name>/<platform>/...`; the publish targets exist so this repo's
+own Claude Code and Copilot can pick the packages up.
 
 ```bash
-python scripts/link_agents.py check    # report drift, non-zero on drift
-python scripts/link_agents.py sync     # create/repair symlinks (idempotent)
-python scripts/link_agents.py repair   # post-clone fix for Windows fallbacks
+python scripts/link_packages.py check    # report drift, non-zero on drift
+python scripts/link_packages.py sync     # create/repair symlinks (idempotent)
+python scripts/link_packages.py repair   # post-clone fix for Windows fallbacks
 ```
 
 `check` runs in CI. `sync` is the day-to-day command after authoring or

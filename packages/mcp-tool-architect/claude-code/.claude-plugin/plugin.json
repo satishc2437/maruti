@@ -1,0 +1,8 @@
+{
+  "name": "mcp-tool-architect",
+  "version": "0.3.0",
+  "description": "Designs decision-ready MCP tool architectures and emits durable spec/guardrails/success-criteria docs.",
+  "author": {
+    "name": "satishc2437"
+  }
+}
