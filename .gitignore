@@ -23,7 +23,12 @@ htmlcov/
 
 # IDE / editor
 .idea/
-.claude/
+
+# Claude Code: only local/machine-specific state is ignored. The
+# .claude/agents/, .claude/skills/, and .claude/commands/ trees are
+# symlink mirrors managed by scripts/link_packages.py and ARE tracked.
+.claude/settings.local.json
+.claude/projects/
 
 # uv / pip
 .uv/
