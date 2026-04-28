@@ -33,14 +33,15 @@ cp packages/dev-team/claude-code/commands/*.md .claude/commands/
 Kick off a run via the slash command:
 
 ```
-/dev-team ado 1234
-/dev-team gh 42
+/dev-team 1234
 ```
+
+The `team-lead` subagent auto-detects whether `1234` is an Azure DevOps work item or a GitHub issue from `git remote get-url origin`. Override with `--platform <ado|gh>` if your repo has remotes pointing at both.
 
 Or invoke the team lead directly:
 
 ```
-team-lead, please pick up ADO work item 1234
+team-lead, please pick up work item 1234
 ```
 
 The `team-lead` subagent will:

@@ -1,0 +1,1 @@
+../../packages/pm-team/claude-code/agents/board-manager.md

@@ -123,3 +123,8 @@ the consumer's expected location (e.g. `.github/agents/<name>.agent.md` or
   (`team-lead`, `software-developer`, `code-reviewer` subagents plus a
   `/dev-team` slash command) that drives an Azure DevOps work item or GitHub
   issue from intake through parallel implementation, code review, and PR.
+- [`pm-team/`](pm-team/) — multi-agent product management team
+  (`pm-team` skill + `requirements-analyst`, `spec-reviewer`, `board-manager`
+  subagents + `/pm-team` and `/board-manager` slash commands) that gathers
+  intent, produces feature specs in parallel, opens a spec PR, and on
+  approval seeds the Kanban board with WIs ready for `dev-team`.

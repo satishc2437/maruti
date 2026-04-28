@@ -7,14 +7,15 @@ A multi-agent software development team for Claude Code. Drives a single work it
 - **`team-lead`** (subagent) — orchestrator. Fetches the work item, designs the implementation, decomposes it into independent tasks, creates a feature branch and per-task worktrees, fans out to `software-developer` subagents in parallel, gates the result through `code-reviewer`, and opens the PR.
 - **`software-developer`** (subagent) — implementer. Works inside a single git worktree on one task. Definition-of-done is **strict**: tests + linters must pass before reporting completion.
 - **`code-reviewer`** (subagent) — read-only reviewer. Re-runs the test/lint gates and produces a structured **go/no-go** verdict with actionable feedback.
-- **`/dev-team`** (slash command) — kickoff shortcut: `/dev-team <ado|gh> <work-item-id>`.
+- **`/dev-team`** (slash command) — kickoff shortcut: `/dev-team <work-item-id>`. Platform (ADO vs GitHub) is auto-detected from `git remote get-url origin`.
 
 ## Workflow
 
 ```
-/dev-team gh 42
+/dev-team 42
   └─► main agent
         └─► team-lead subagent
+              ├── detect platform from `git remote get-url origin`
               ├── fetch work item (ADO MCP or `gh`)
               ├── analyze + design + decompose into N tasks
               ├── create feature branch + N worktrees
