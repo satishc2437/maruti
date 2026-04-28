@@ -91,19 +91,16 @@ drift from the source, the build fails.
 
 ## Consuming these packages from another repo
 
-**Claude Code** — install the package as a plugin. The recommended path is **directly from GitHub** — no local checkout required:
+**Claude Code** — install via the [marketplace manifest](../.claude-plugin/marketplace.json) at the repo root. Two-step flow, both run from a Claude Code session in the target repo:
 
 ```
-/plugin install <name>@satishc2437/maruti/packages/<name>/claude-code
+/plugin marketplace add satishc2437/maruti
+/plugin install <name>@maruti
 ```
 
-This pulls from the default branch of `github.com/satishc2437/maruti`. Pin to a specific tag or branch with the full source form:
+Where `<name>` is one of `pm-team`, `dev-team`, `assistant-wizard`, `mcp-tool-architect`. The first command is one-time per machine; subsequent installs only need the second line.
 
-```
-/plugin install <name> --source '{"source":"git-subdir","url":"satishc2437/maruti","path":"packages/<name>/claude-code","ref":"<tag-or-branch>"}'
-```
-
-If you already have maruti cloned locally, you can install from the path instead:
+If you already have maruti cloned locally, you can install a single plugin from the path instead:
 
 ```
 /plugin install <absolute-path>/packages/<name>/claude-code

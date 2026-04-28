@@ -4,21 +4,22 @@ Installable Claude Code plugin bundling one skill (`pm-team`), three subagents (
 
 ## Install
 
-### Option A — directly from GitHub (recommended)
+### Option A — via the maruti marketplace (recommended)
 
-From a Claude Code session in the target repo, no local checkout required:
-
-```
-/plugin install pm-team@satishc2437/maruti/packages/pm-team/claude-code
-```
-
-This installs from the default branch of `github.com/satishc2437/maruti`. To pin to a specific tag or branch:
+Two-step flow from a Claude Code session in the target repo, no local checkout required:
 
 ```
-/plugin install pm-team --source '{"source":"git-subdir","url":"satishc2437/maruti","path":"packages/pm-team/claude-code","ref":"<tag-or-branch>"}'
+/plugin marketplace add satishc2437/maruti
+/plugin install pm-team@maruti
 ```
 
-No `/plugin marketplace add` step required for public repos.
+The marketplace manifest lives at `.claude-plugin/marketplace.json` in the maruti repo root and registers all available plugins. The first command is one-time per machine; the marketplace stays registered across sessions.
+
+To pin the marketplace to a specific tag or branch (rather than the default branch), add a ref suffix:
+
+```
+/plugin marketplace add satishc2437/maruti@<tag-or-branch>
+```
 
 ### Option B — from a local checkout
 

@@ -1,0 +1,44 @@
+{
+  "name": "maruti",
+  "owner": {
+    "name": "satishc2437"
+  },
+  "plugins": [
+    {
+      "name": "pm-team",
+      "source": {
+        "source": "git-subdir",
+        "url": "satishc2437/maruti",
+        "path": "packages/pm-team/claude-code"
+      },
+      "description": "Multi-agent product management team that gathers intent, produces feature specs, gates them through a reviewer, opens a spec PR, and on approval seeds the Azure DevOps or GitHub Kanban board with work items for handoff to dev-team."
+    },
+    {
+      "name": "dev-team",
+      "source": {
+        "source": "git-subdir",
+        "url": "satishc2437/maruti",
+        "path": "packages/dev-team/claude-code"
+      },
+      "description": "Multi-agent software development team that drives a work item from Azure DevOps or GitHub through design, parallel implementation, code review, and PR creation."
+    },
+    {
+      "name": "assistant-wizard",
+      "source": {
+        "source": "git-subdir",
+        "url": "satishc2437/maruti",
+        "path": "packages/assistant-wizard/claude-code"
+      },
+      "description": "Designs and generates new custom subagents, skills, slash commands, chat modes, and prompt files for Claude Code and GitHub Copilot."
+    },
+    {
+      "name": "mcp-tool-architect",
+      "source": {
+        "source": "git-subdir",
+        "url": "satishc2437/maruti",
+        "path": "packages/mcp-tool-architect/claude-code"
+      },
+      "description": "Designs decision-ready MCP tool architectures and emits durable spec/guardrails/success-criteria docs."
+    }
+  ]
+}

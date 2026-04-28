@@ -14,10 +14,13 @@ A multi-agent software development team for Claude Code. Drives a single work it
 From a Claude Code session in the target repo (no local checkout required):
 
 ```
-/plugin install dev-team@satishc2437/maruti/packages/dev-team/claude-code
+/plugin marketplace add satishc2437/maruti
+/plugin install dev-team@maruti
 ```
 
-For pinned-ref, local-checkout, and project-local-copy options, see [`claude-code/README.md`](claude-code/README.md#install).
+The first line is one-time per machine; subsequent installs from the same marketplace only need the second.
+
+For local-checkout and project-local-copy options, see [`claude-code/README.md`](claude-code/README.md#install).
 
 ## Workflow
 

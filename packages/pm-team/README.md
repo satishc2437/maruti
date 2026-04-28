@@ -16,10 +16,13 @@ A multi-agent product management team for Claude Code. Takes a one-line user int
 From a Claude Code session in the target repo (no local checkout required):
 
 ```
-/plugin install pm-team@satishc2437/maruti/packages/pm-team/claude-code
+/plugin marketplace add satishc2437/maruti
+/plugin install pm-team@maruti
 ```
 
-For pinned-ref, local-checkout, and project-local-copy options, see [`claude-code/README.md`](claude-code/README.md#install).
+The first line is one-time per machine; subsequent installs from the same marketplace only need the second.
+
+For local-checkout and project-local-copy options, see [`claude-code/README.md`](claude-code/README.md#install).
 
 ## Platform detection
 
