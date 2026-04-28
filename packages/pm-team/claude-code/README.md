@@ -4,15 +4,31 @@ Installable Claude Code plugin bundling one skill (`pm-team`), three subagents (
 
 ## Install
 
-### Option A — as a Claude Code plugin (recommended)
+### Option A — directly from GitHub (recommended)
 
-From a Claude Code session in the target repo:
+From a Claude Code session in the target repo, no local checkout required:
+
+```
+/plugin install pm-team@satishc2437/maruti/packages/pm-team/claude-code
+```
+
+This installs from the default branch of `github.com/satishc2437/maruti`. To pin to a specific tag or branch:
+
+```
+/plugin install pm-team --source '{"source":"git-subdir","url":"satishc2437/maruti","path":"packages/pm-team/claude-code","ref":"<tag-or-branch>"}'
+```
+
+No `/plugin marketplace add` step required for public repos.
+
+### Option B — from a local checkout
+
+If you already have maruti cloned:
 
 ```
 /plugin install <absolute-path>/packages/pm-team/claude-code
 ```
 
-### Option B — project-local
+### Option C — project-local copy
 
 ```bash
 mkdir -p .claude/agents .claude/commands .claude/skills/pm-team

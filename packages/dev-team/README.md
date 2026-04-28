@@ -9,6 +9,16 @@ A multi-agent software development team for Claude Code. Drives a single work it
 - **`code-reviewer`** (subagent) — read-only reviewer. Re-runs the test/lint gates and produces a structured **go/no-go** verdict with actionable feedback.
 - **`/dev-team`** (slash command) — kickoff shortcut: `/dev-team <work-item-id>`. Platform (ADO vs GitHub) is auto-detected from `git remote get-url origin`.
 
+## Install
+
+From a Claude Code session in the target repo (no local checkout required):
+
+```
+/plugin install dev-team@satishc2437/maruti/packages/dev-team/claude-code
+```
+
+For pinned-ref, local-checkout, and project-local-copy options, see [`claude-code/README.md`](claude-code/README.md#install).
+
 ## Workflow
 
 ```

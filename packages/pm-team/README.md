@@ -11,6 +11,16 @@ A multi-agent product management team for Claude Code. Takes a one-line user int
 - **`/pm-team`** (slash command) — kickoff: three argument shapes for three modes.
 - **`/board-manager`** (slash command) — direct board operations independent of the PM flow.
 
+## Install
+
+From a Claude Code session in the target repo (no local checkout required):
+
+```
+/plugin install pm-team@satishc2437/maruti/packages/pm-team/claude-code
+```
+
+For pinned-ref, local-checkout, and project-local-copy options, see [`claude-code/README.md`](claude-code/README.md#install).
+
 ## Platform detection
 
 Both slash commands deduce the platform from `git remote get-url origin`:

@@ -4,19 +4,35 @@ Installable Claude Code plugin bundling three subagents (`team-lead`, `software-
 
 ## Install
 
-### Option A — as a Claude Code plugin (recommended)
+### Option A — directly from GitHub (recommended)
 
-From a Claude Code session:
+From a Claude Code session in the target repo, no local checkout required:
+
+```
+/plugin install dev-team@satishc2437/maruti/packages/dev-team/claude-code
+```
+
+This installs from the default branch of `github.com/satishc2437/maruti`. To pin to a specific tag or branch:
+
+```
+/plugin install dev-team --source '{"source":"git-subdir","url":"satishc2437/maruti","path":"packages/dev-team/claude-code","ref":"<tag-or-branch>"}'
+```
+
+No `/plugin marketplace add` step required for public repos.
+
+### Option B — from a local checkout
+
+If you already have maruti cloned:
 
 ```
 /plugin install <absolute-path>/packages/dev-team/claude-code
 ```
 
-### Option B — project-local
+### Option C — project-local copy
 
 ```bash
 mkdir -p .claude/agents .claude/commands
-cp packages/dev-team/claude-code/agents/*.md .claude/agents/
+cp packages/dev-team/claude-code/agents/*.md   .claude/agents/
 cp packages/dev-team/claude-code/commands/*.md .claude/commands/
 ```
 

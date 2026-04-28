@@ -91,7 +91,19 @@ drift from the source, the build fails.
 
 ## Consuming these packages from another repo
 
-**Claude Code** — install the package as a plugin:
+**Claude Code** — install the package as a plugin. The recommended path is **directly from GitHub** — no local checkout required:
+
+```
+/plugin install <name>@satishc2437/maruti/packages/<name>/claude-code
+```
+
+This pulls from the default branch of `github.com/satishc2437/maruti`. Pin to a specific tag or branch with the full source form:
+
+```
+/plugin install <name> --source '{"source":"git-subdir","url":"satishc2437/maruti","path":"packages/<name>/claude-code","ref":"<tag-or-branch>"}'
+```
+
+If you already have maruti cloned locally, you can install from the path instead:
 
 ```
 /plugin install <absolute-path>/packages/<name>/claude-code
