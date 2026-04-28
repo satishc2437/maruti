@@ -12,17 +12,22 @@ packages/<name>/
 ├── README.md                            # top-level: purpose, layout, links
 ├── claude-code/                         # installable Claude Code plugin
 │   ├── .claude-plugin/plugin.json       # always (plugin manifest)
-│   ├── agents/<name>.md                 # subagent (optional)
-│   ├── skills/<name>/SKILL.md           # skill (optional)
-│   ├── commands/<name>.md               # slash command (optional)
+│   ├── agents/*.md                      # zero or more subagents
+│   ├── skills/*/SKILL.md                # zero or more skills
+│   ├── commands/*.md                    # zero or more slash commands
 │   └── README.md                        # install / usage
 └── github-copilot/                      # installable Copilot payload
-    ├── agents/<name>.agent.md           # chat mode (optional)
-    ├── prompts/<name>.prompt.md         # prompt file (optional)
+    ├── agents/*.agent.md                # zero or more chat modes
+    ├── prompts/*.prompt.md              # zero or more prompt files
     ├── install.sh                       # always (Bash deploy script)
     ├── install.ps1                      # always (PowerShell deploy script)
     └── README.md                        # install / usage
 ```
+
+A package may ship multiple primitives in the same class — e.g. a coordinated
+team of subagents that delegate to each other (see [`dev-team/`](dev-team/)).
+Filenames must be unique per primitive class across **all** packages, since
+the publish target preserves the source filename.
 
 The right primitive for a given package depends on its intent. The
 [`assistant-wizard/`](assistant-wizard/) package picks one for you and explains
@@ -51,11 +56,13 @@ Copilot can use the agents during work on Maruti itself:
 
 | Source | Mirror |
 |---|---|
-| `packages/<name>/claude-code/agents/<name>.md` | `.claude/agents/<name>.md` |
-| `packages/<name>/claude-code/skills/<name>/` | `.claude/skills/<name>/` |
-| `packages/<name>/claude-code/commands/<name>.md` | `.claude/commands/<name>.md` |
-| `packages/<name>/github-copilot/agents/<name>.agent.md` | `.github/agents/<name>.agent.md` |
-| `packages/<name>/github-copilot/prompts/<name>.prompt.md` | `.github/prompts/<name>.prompt.md` |
+| `packages/<name>/claude-code/agents/<file>.md` | `.claude/agents/<file>.md` |
+| `packages/<name>/claude-code/skills/<dir>/` | `.claude/skills/<dir>/` |
+| `packages/<name>/claude-code/commands/<file>.md` | `.claude/commands/<file>.md` |
+| `packages/<name>/github-copilot/agents/<file>.agent.md` | `.github/agents/<file>.agent.md` |
+| `packages/<name>/github-copilot/prompts/<file>.prompt.md` | `.github/prompts/<file>.prompt.md` |
+
+Source filenames are preserved; one mirror is created per artifact found.
 
 The mirror is managed by [`scripts/link_packages.py`](../scripts/README.md)
 and is enforced by CI — never edit anything under `.claude/` or
@@ -112,3 +119,7 @@ the consumer's expected location (e.g. `.github/agents/<name>.agent.md` or
 - [`mcp-tool-architect/`](mcp-tool-architect/) — turns a problem statement
   into a decision-ready MCP tool architecture and writes the durable
   spec/guardrails/success-criteria docs.
+- [`dev-team/`](dev-team/) — multi-agent software development team
+  (`team-lead`, `software-developer`, `code-reviewer` subagents plus a
+  `/dev-team` slash command) that drives an Azure DevOps work item or GitHub
+  issue from intake through parallel implementation, code review, and PR.

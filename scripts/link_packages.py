@@ -3,32 +3,38 @@
 
 The canonical authoring location for an agent is packages/<name>/, which contains
 platform-specific subdirectories. Each platform may host any combination of
-primitives — a Claude Code package can include a subagent, a skill, and/or a
-slash command; a Copilot package can include a chat mode and/or a prompt file.
+primitives, and each primitive subdirectory may contain any number of artifacts
+(so a single package can ship a coordinated team of subagents, multiple slash
+commands, etc.):
 
     packages/<name>/
     ├── README.md
     ├── claude-code/
     │   ├── .claude-plugin/plugin.json
-    │   ├── agents/<name>.md                  # subagent (optional)
-    │   ├── skills/<name>/SKILL.md            # skill (optional)
-    │   ├── commands/<name>.md                # slash command (optional)
+    │   ├── agents/*.md                       # zero or more subagents
+    │   ├── skills/*/SKILL.md                 # zero or more skills
+    │   ├── commands/*.md                     # zero or more slash commands
     │   └── README.md
     └── github-copilot/
-        ├── agents/<name>.agent.md            # chat mode (optional)
-        ├── prompts/<name>.prompt.md          # prompt file (optional)
+        ├── agents/*.agent.md                 # zero or more chat modes
+        ├── prompts/*.prompt.md               # zero or more prompt files
         ├── install.sh
         ├── install.ps1
         └── README.md
 
-This script publishes one symlink per primitive present, so this repo's own
+This script publishes one symlink per artifact found, preserving the source
+filename (or skill directory name) at the publish target so this repo's own
 Claude Code and Copilot can pick the agents up:
 
-    .claude/agents/<name>.md            -> ../../packages/<name>/claude-code/agents/<name>.md
-    .claude/skills/<name>                -> ../../packages/<name>/claude-code/skills/<name>
-    .claude/commands/<name>.md          -> ../../packages/<name>/claude-code/commands/<name>.md
-    .github/agents/<name>.agent.md      -> ../../packages/<name>/github-copilot/agents/<name>.agent.md
-    .github/prompts/<name>.prompt.md    -> ../../packages/<name>/github-copilot/prompts/<name>.prompt.md
+    .claude/agents/<file>.md            -> ../../packages/<name>/claude-code/agents/<file>.md
+    .claude/skills/<dir>                 -> ../../packages/<name>/claude-code/skills/<dir>
+    .claude/commands/<file>.md          -> ../../packages/<name>/claude-code/commands/<file>.md
+    .github/agents/<file>.agent.md      -> ../../packages/<name>/github-copilot/agents/<file>.agent.md
+    .github/prompts/<file>.prompt.md    -> ../../packages/<name>/github-copilot/prompts/<file>.prompt.md
+
+If two packages declare artifacts with the same filename in the same primitive
+class, discovery aborts with a collision error — pick unique names per
+primitive across all packages.
 
 Modes:
     sync    Create or repair publish-target symlinks. Idempotent. Refuses to
@@ -84,8 +90,44 @@ def _add_dir_mirror(
         mirrors.append(Mirror(source=src, link=link, relative_target=rel_target))
 
 
+def _glob_files(directory: Path, pattern: str) -> list[Path]:
+    """Return the sorted list of files in directory matching pattern."""
+    if not directory.is_dir():
+        return []
+    return sorted(p for p in directory.glob(pattern) if p.is_file())
+
+
+def _glob_subdirs(directory: Path) -> list[Path]:
+    """Return the sorted list of immediate subdirectories of directory."""
+    if not directory.is_dir():
+        return []
+    return sorted(p for p in directory.iterdir() if p.is_dir())
+
+
+def _check_for_collisions(mirrors: list[Mirror]) -> None:
+    """Exit with an error if two mirrors target the same publish path."""
+    by_link: dict[Path, list[Mirror]] = {}
+    for mirror in mirrors:
+        by_link.setdefault(mirror.link, []).append(mirror)
+    collisions = {k: v for k, v in by_link.items() if len(v) > 1}
+    if not collisions:
+        return
+    lines = ["Mirror collision: two packages claim the same publish path."]
+    for link, candidates in sorted(collisions.items()):
+        lines.append(f"  {link.relative_to(REPO_ROOT)} <- one of:")
+        for candidate in candidates:
+            lines.append(f"    {candidate.source.relative_to(REPO_ROOT)}")
+    print("\n".join(lines), file=sys.stderr)
+    sys.exit(1)
+
+
 def discover_mirrors() -> list[Mirror]:
-    """Return one Mirror per primitive found across all agent packages."""
+    """Return one Mirror per primitive found across all agent packages.
+
+    Each package may contribute any number of artifacts per primitive class.
+    Source filenames are preserved at the publish target so a package with
+    multiple subagents fans out to multiple `.claude/agents/` symlinks.
+    """
     if not PACKAGES_DIR.is_dir():
         return []
 
@@ -95,44 +137,50 @@ def discover_mirrors() -> list[Mirror]:
 
         cc_root = agent_dir / "claude-code"
         if cc_root.is_dir():
-            _add_file_mirror(
-                mirrors,
-                src=cc_root / "agents" / f"{name}.md",
-                link=CLAUDE_ROOT / "agents" / f"{name}.md",
-                rel_target=f"../../packages/{name}/claude-code/agents/{name}.md",
-            )
-            _add_dir_mirror(
-                mirrors,
-                src=cc_root / "skills" / name,
-                link=CLAUDE_ROOT / "skills" / name,
-                rel_target=f"../../packages/{name}/claude-code/skills/{name}",
-            )
-            _add_file_mirror(
-                mirrors,
-                src=cc_root / "commands" / f"{name}.md",
-                link=CLAUDE_ROOT / "commands" / f"{name}.md",
-                rel_target=f"../../packages/{name}/claude-code/commands/{name}.md",
-            )
+            for src in _glob_files(cc_root / "agents", "*.md"):
+                _add_file_mirror(
+                    mirrors,
+                    src=src,
+                    link=CLAUDE_ROOT / "agents" / src.name,
+                    rel_target=f"../../packages/{name}/claude-code/agents/{src.name}",
+                )
+            for src in _glob_subdirs(cc_root / "skills"):
+                _add_dir_mirror(
+                    mirrors,
+                    src=src,
+                    link=CLAUDE_ROOT / "skills" / src.name,
+                    rel_target=f"../../packages/{name}/claude-code/skills/{src.name}",
+                )
+            for src in _glob_files(cc_root / "commands", "*.md"):
+                _add_file_mirror(
+                    mirrors,
+                    src=src,
+                    link=CLAUDE_ROOT / "commands" / src.name,
+                    rel_target=f"../../packages/{name}/claude-code/commands/{src.name}",
+                )
 
         copilot_root = agent_dir / "github-copilot"
         if copilot_root.is_dir():
-            _add_file_mirror(
-                mirrors,
-                src=copilot_root / "agents" / f"{name}.agent.md",
-                link=GITHUB_ROOT / "agents" / f"{name}.agent.md",
-                rel_target=(
-                    f"../../packages/{name}/github-copilot/agents/{name}.agent.md"
-                ),
-            )
-            _add_file_mirror(
-                mirrors,
-                src=copilot_root / "prompts" / f"{name}.prompt.md",
-                link=GITHUB_ROOT / "prompts" / f"{name}.prompt.md",
-                rel_target=(
-                    f"../../packages/{name}/github-copilot/prompts/{name}.prompt.md"
-                ),
-            )
+            for src in _glob_files(copilot_root / "agents", "*.agent.md"):
+                _add_file_mirror(
+                    mirrors,
+                    src=src,
+                    link=GITHUB_ROOT / "agents" / src.name,
+                    rel_target=(
+                        f"../../packages/{name}/github-copilot/agents/{src.name}"
+                    ),
+                )
+            for src in _glob_files(copilot_root / "prompts", "*.prompt.md"):
+                _add_file_mirror(
+                    mirrors,
+                    src=src,
+                    link=GITHUB_ROOT / "prompts" / src.name,
+                    rel_target=(
+                        f"../../packages/{name}/github-copilot/prompts/{src.name}"
+                    ),
+                )
 
+    _check_for_collisions(mirrors)
     return mirrors
 
 

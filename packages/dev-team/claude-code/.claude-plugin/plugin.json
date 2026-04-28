@@ -1,0 +1,8 @@
+{
+  "name": "dev-team",
+  "version": "0.1.0",
+  "description": "Multi-agent software development team that drives a work item from Azure DevOps or GitHub through design, parallel implementation, code review, and PR creation.",
+  "author": {
+    "name": "satishc2437"
+  }
+}
