@@ -13,6 +13,7 @@ const wl = (over: Partial<WorkLogEntry> = {}): WorkLogEntry => ({
   status: 'in-progress',
   timestamp: null,
   timestampMs: null,
+  requirement: 'AC-1',
   doing: 'retry full-repo validation',
   blockers: 'none',
   ...over,

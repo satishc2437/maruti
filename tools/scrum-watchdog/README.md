@@ -46,6 +46,9 @@ node dist/cli.js once .scrum/<slug> [options]
 
 # Continuous: poll on an interval, notify on each state change, until Ctrl-C.
 node dist/cli.js watch .scrum/<slug> [options]
+
+# Synthesized status view across every project under a .scrum/ root.
+node dist/cli.js dashboard .scrum [--html status.html] [--watch]
 ```
 
 Options:
@@ -87,9 +90,29 @@ for; both have env-var fallbacks so a CI or a launcher can set them once.
 }
 ```
 
-The **status view** (a sibling tool) renders this file; observability is uniform
-whether it describes the top-level lead's run or `dev-team`'s internal sub-team —
-point the watchdog at any `.scrum/<slug>/` directory.
+## Synthesized status view (`dashboard`)
+
+`dashboard <scrumRoot>` answers "is the team moving in the right direction?" from
+the structured status you already have — one rolled-up view, not one terminal per
+worker. It discovers every `<slug>/watchdog-status.json` under the root and, for
+each project, shows **per-task progress against its acceptance criteria** (the
+`requirement` ref), the current **blocker / budget / heartbeat / loop** state, and
+**budget burn** (`cycle X/N`, reading the cap from the project's `plan.md`).
+
+```bash
+# Minimal TUI (text table) to stdout:
+node dist/cli.js dashboard .scrum
+
+# Self-contained, theme-aware HTML page, re-rendered every 20s:
+node dist/cli.js dashboard .scrum --html status.html --watch
+```
+
+The instrumentation is **uniform / fractal**: the same status file describes the
+top-level lead's run and a `dev-team` sub-team's run, so pointing `dashboard` at
+`.scrum/` aggregates both. The dashboard is read-only; **drilling into a single
+worker to steer it** still works through the orchestrator's existing controls
+(`TaskOutput` to inspect, re-dispatch to redirect) — the view tells you *which*
+worker to attach to.
 
 ## Develop
 

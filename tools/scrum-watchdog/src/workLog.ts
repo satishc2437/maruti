@@ -81,6 +81,7 @@ export function parseWorkLog(markdown: string): WorkLogEntry[] {
       status: coerceStatus(field(body, 'status')),
       timestamp: hasTs ? tsRaw : null,
       timestampMs: hasTs ? timestampMs : null,
+      requirement: field(body, 'requirement'),
       doing: detailLine(body, 'Doing'),
       blockers: detailLine(body, 'Blockers'),
     });

@@ -66,7 +66,7 @@ function rollUpTasks(all: WorkLogEntry[]): TaskStatus[] {
       agentId: e.agentId,
       latestStatus: e.status,
       latestCycle: e.cycle,
-      requirement: '',
+      requirement: e.requirement,
       blocker: e.status === 'blocked' ? e.blockers : '',
     }));
 }

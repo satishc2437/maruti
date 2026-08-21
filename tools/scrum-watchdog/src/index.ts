@@ -24,3 +24,12 @@ export {
   STATUS_FILENAME,
 } from './statusFile.js';
 export { summarizeStatus, stateChanged } from './summary.js';
+export { parseCycleBudget, readCycleBudget } from './plan.js';
+export {
+  buildModel,
+  loadDashboard,
+  renderText,
+  renderHtml,
+  type DashboardModel,
+  type DashboardProject,
+} from './dashboard.js';
