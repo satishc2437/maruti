@@ -40,6 +40,24 @@ Attempt to read `.scrum/lessons.md` in the consumer repo's working directory. If
 
 ---
 
+## Phase 0.5 — Pre-flight auth gate
+
+Before any work that touches the remote (creating the spec PR, seeding board
+items, dispatching `board-manager`), verify — **presence and validity only;
+never read, echo, or store any credential value** — that the credentials this run
+needs are established, so no phase blocks silently on a login prompt:
+
+- **Tracker auth.** `gh`: `gh auth status` exits 0 with an authenticated account
+  (repo + project scope). `ado`: the ADO MCP server / `az` session is valid.
+- **Git remote push credentials.** Probe with `git ls-remote origin HEAD`
+  (read-only) so the spec-PR push won't fail later.
+
+If any check fails, **STOP before doing any work.** Report exactly which
+credential is missing and the single command to establish it (e.g. "GitHub CLI is
+not authenticated — run `gh auth login`"). Once valid, proceed unchanged.
+
+---
+
 ## Phase 1 — Intake (mode-specific)
 
 The Phase 1 work is mode-specific. The Scrum mechanics (Phases 0, 2, 3, 4, 5, 7) wrap whichever Phase 1 you run; the existing intake prose is preserved verbatim per mode.

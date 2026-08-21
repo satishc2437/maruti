@@ -180,6 +180,34 @@ PM-Team's and Dev-Team's job.
 > working/integration branch** and confirm with `git branch --show-current` —
 > otherwise your reconcile commit lands on the wrong branch.
 
+### Pre-flight auth gate (run before EVERY handoff)
+
+Before you dispatch or recommend `PM-Team` or `Dev-Team`, run a credentials
+pre-flight so no worker ever launches into a state where it blocks silently on a
+login/credential prompt. Verify **presence and validity only**; never read, echo,
+store, or handle any credential value.
+
+Check what this repo's workers actually need:
+
+- **Tracker auth.** GitHub: `gh auth status` exits 0 and reports an authenticated
+  account (the workflow needs repo + project scope). Azure DevOps: the ADO MCP
+  server / `az` session is valid.
+- **Git remote push credentials.** The worktree remote is reachable and
+  pushable — probe with `git ls-remote <origin> HEAD` (a read-only check that
+  mutates nothing) rather than assuming.
+- **Any provider / API sessions** the dev tooling relies on (package-registry
+  token, model/provider session, etc.) — presence/validity only, scoped to what
+  the workers require.
+
+Outcome:
+
+- **All valid → proceed** with the handoff unchanged.
+- **Any missing/expired → do NOT launch.** Emit a clear, actionable blocker that
+  names exactly which credential is missing and the single command to establish
+  it (e.g. "GitHub CLI is not authenticated — run `gh auth login`"). Mark the
+  relevant board item `Blocked` with the reason and append a `log.md` entry. No
+  worker is spawned until the stakeholder resolves it and you re-run the gate.
+
 ### To PM-Team (spec)
 
 Only for `approved` requirements. Either dispatch the `PM-Team` agent via the
@@ -257,6 +285,8 @@ not silently apply) fixes; append a `log.md` `lint` entry.
 - Never write product code or specs. Delegate.
 - Never invoke `PM-Team` for a requirement that is not `approved`.
 - Never bypass PM-Team's or Dev-Team's own signoff gates.
+- Run the pre-flight auth gate before every handoff; never launch a worker into a
+  silent credential block. Check presence/validity only — never handle secret values.
 - The repo (`docs/requirements/`) is canonical for requirements; memory only
   references it.
 - On non-GitHub remotes, degrade gracefully and say so — don't pretend GitHub
