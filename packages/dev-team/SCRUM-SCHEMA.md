@@ -70,6 +70,16 @@ Field notes:
 - **Override:** the budget is configurable per invocation via `--cycles N`. `N` MUST be an integer `>= 3`. Smaller values are rejected; the orchestrator falls back to the default.
 - The cycle counter starts at `1`, increments by `1` per scrum pass, and **never resets** within a project.
 
+## Governance policies
+
+Scrum-aware orchestrators enforce a standing set of governance policies on every project, automatically, without waiting for a human nudge. They encode the interventions a supervisor would otherwise make by hand — scope creep, mechanical looping, and silent hangs. They are **additive**: they never weaken the plan-signoff, design-signoff, or reviewer gates.
+
+- **Scope-bounds validation.** A task's `validationScope` MUST match its `changeScope`. A `local` change (confined to one package; no shared/public interface, schema, or cross-package contract touched) runs `targeted` validation — the touched package's tests + type-check/lint only, never the full-repo matrix. Only a `cross-cutting` change (shared/app-wide construct, or >1 package boundary) may set `full`. The orchestrator MUST reject any plan that runs full-repo validation for a `local` task.
+- **Per-task budget.** Every dispatched task carries `cycleTurnBudget` (tool calls/turn, default 30) plus a soft wall-clock expectation. On breach the worker returns a targeted result or an explicit blocker — never open-ended broad work. A worker still running at 2× budget is treated as a blocker and stopped.
+- **Permission allowlist.** Routine safe operations (read files; run tests/linters/type-checks; `git status`/`diff`/`log`/`add`/`commit` on the task sub-branch; `.scrum/` artifacts; targeted builds) are pre-approved and never prompt. Blocker-only operations (force-push; history rewrite; deleting anything outside task scope; secret access; spending money / paid APIs; publishing/releasing) are surfaced as blockers, never performed unattended.
+- **Standing auto-intervention.** When a budget / loop / heartbeat signal trips, the orchestrator diagnoses, halts the broad work, re-scopes to targeted validation (or raises a blocker), and records the intervention — governed by the autonomy knob below.
+- **Autonomy knob.** `--autonomy <auto-intervene|pause-and-ping>` (default `auto-intervene`, velocity-first) is the single human dial. It governs only budget / loop / heartbeat responses (act immediately vs. ask first); it never overrides the permission allowlist — blocker-only operations always pause for the human.
+
 ## Lessons memory (`.scrum/lessons.md`)
 
 The lessons file is a **cross-project** scratch-pad of project-agnostic guidance distilled from each retrospective. It is read at the start of every new project (Phase 0) so future plans can learn from prior runs.
@@ -112,7 +122,7 @@ Required sections:
 - **Project slug** — the derived slug.
 - **Objective** — one-sentence summary of the work-item goal.
 - **Team composition** — list of agent identities the orchestrator will spawn. Each row: `agentId`, `role`, `responsibility` (1 sentence).
-- **Task breakdown** — list of tasks. Each row: `taskId` (`task-<n>`), `taskName`, `taskDescription` (1–2 sentences), `requirementRef` (acceptance-criterion id or n/a), `assignedAgentId`, `successCriteria`.
+- **Task breakdown** — list of tasks. Each row: `taskId` (`task-<n>`), `taskName`, `taskDescription` (1–2 sentences), `requirementRef` (acceptance-criterion id or n/a), `assignedAgentId`, `changeScope` (`local` | `cross-cutting`), `validationScope` (`targeted` | `full`), `successCriteria`. `validationScope` MUST be `targeted` for a `local` task (see [Governance policies](#governance-policies)).
 - **Cycle budget** — the cap `N` and warn threshold `N-2`.
 - **Definition of done at the project level** — when does the orchestrator declare success?
 - **Risks anticipated** — 1–4 risks / blockers anticipated.
