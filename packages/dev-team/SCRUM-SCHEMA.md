@@ -18,6 +18,7 @@ The schema lives in the **consumer repo's working directory** (the repo where th
         ├── software-developer-1.md         # one file per persistent agent identity
         ├── software-developer-2.md
         ├── code-reviewer-1.md
+        ├── drift-critic-1.md               # requirement-level scope/goal-drift gate (dev-team)
         └── ...
 ```
 
