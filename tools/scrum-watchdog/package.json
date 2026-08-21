@@ -1,0 +1,37 @@
+{
+  "name": "scrum-watchdog",
+  "version": "1.0.0",
+  "description": "Cross-platform watchdog + loop detector for Scrum-cadence agent runs: flags silent hangs (stuck) and mechanical thrashing from the .scrum/ work-log stream, and writes a rolled-up status file.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "scrum-watchdog": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/ --ext .ts"
+  },
+  "keywords": [
+    "scrum",
+    "watchdog",
+    "loop-detector",
+    "heartbeat",
+    "agents",
+    "governance"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "tsx": "^4.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

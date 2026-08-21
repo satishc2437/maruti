@@ -16,6 +16,11 @@ dist/
 .eggs/
 src/*.egg-info/
 
+# Node / TypeScript companion tools (e.g. tools/scrum-watchdog)
+node_modules/
+*.tsbuildinfo
+coverage/
+
 # Test / coverage
 .pytest_cache/
 .coverage
