@@ -28,6 +28,7 @@ describe('parseWorkLog', () => {
     expect(e!.status).toBe('in-progress');
     expect(e!.timestamp).toBe('2026-08-20T22:00:00Z');
     expect(e!.timestampMs).toBe(Date.parse('2026-08-20T22:00:00Z'));
+    expect(e!.requirement).toBe('AC-1');
     expect(e!.doing).toBe('next thing');
     expect(e!.blockers).toBe('none');
   });

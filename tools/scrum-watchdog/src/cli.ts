@@ -5,12 +5,14 @@
  * stdout together.
  */
 
-import { join } from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 import { parseArgs, helpText } from './args.js';
 import { evaluateScrumDir } from './watchdog.js';
 import { writeStatus, STATUS_FILENAME } from './statusFile.js';
 import { summarizeStatus, stateChanged } from './summary.js';
+import { loadDashboard, renderText, renderHtml } from './dashboard.js';
 import type { WatchdogStatus } from './types.js';
 
 const EXIT_BY_STATE: Record<WatchdogStatus['state'], number> = {
@@ -29,6 +31,36 @@ async function main(): Promise<number> {
   if (args.command === 'help') {
     process.stdout.write(`${helpText()}\n`);
     return args.errors.length > 0 ? 1 : 0;
+  }
+
+  if (args.command === 'dashboard') {
+    const render = (): void => {
+      const model = loadDashboard(args.scrumDir, Date.now());
+      if (args.htmlFile) {
+        mkdirSync(dirname(args.htmlFile), { recursive: true });
+        writeFileSync(args.htmlFile, renderHtml(model, args.intervalSec), 'utf8');
+        process.stdout.write(
+          `Wrote ${args.htmlFile} (${model.projects.length} project(s)).\n`,
+        );
+      } else {
+        process.stdout.write(`${renderText(model)}\n`);
+      }
+    };
+    if (!args.watch) {
+      render();
+      return 0;
+    }
+    let stop = false;
+    const onSignal = (): void => {
+      stop = true;
+    };
+    process.on('SIGINT', onSignal);
+    process.on('SIGTERM', onSignal);
+    while (!stop) {
+      render();
+      await new Promise((r) => setTimeout(r, args.intervalSec * 1000));
+    }
+    return 0;
   }
 
   const statusPath = args.statusFile ?? join(args.scrumDir, STATUS_FILENAME);

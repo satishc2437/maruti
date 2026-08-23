@@ -5,19 +5,26 @@
 
 import type { WatchdogConfig } from './types.js';
 
-export type Command = 'once' | 'watch' | 'help';
+export type Command = 'once' | 'watch' | 'dashboard' | 'help';
 
 export interface ParsedArgs {
   command: Command;
-  /** The `.scrum/<slug>/` directory to observe (required for once/watch). */
+  /**
+   * The directory argument: a single `.scrum/<slug>/` for once/watch, or a
+   * `.scrum/` root (or single project dir) for dashboard.
+   */
   scrumDir: string;
   config: WatchdogConfig;
-  /** Poll interval for `watch`, in seconds. */
+  /** Poll interval for `watch`/`dashboard --watch`, in seconds. */
   intervalSec: number;
   /** Override for the status-file path (defaults under scrumDir). */
   statusFile: string | null;
   /** Optional JSON-lines event stream to fold in. */
   eventsFile: string | null;
+  /** For dashboard: write a self-contained HTML page here instead of stdout. */
+  htmlFile: string | null;
+  /** For dashboard: keep re-rendering on `intervalSec` until interrupted. */
+  watch: boolean;
   /** Print the full status JSON in addition to the summary. */
   json: boolean;
   /** Parse errors, if any (command falls back to help). */
@@ -51,6 +58,8 @@ export function parseArgs(argv: string[]): ParsedArgs {
   let intervalSec = envInt('SCRUM_WATCHDOG_INTERVAL_SEC', DEFAULTS.intervalSec);
   let statusFile: string | null = null;
   let eventsFile: string | null = null;
+  let htmlFile: string | null = null;
+  let watch = false;
   let json = false;
 
   const takeNumber = (label: string, raw: string | undefined, min: number, fallback: number): number => {
@@ -80,6 +89,12 @@ export function parseArgs(argv: string[]): ParsedArgs {
       case '--events':
         eventsFile = argv[++i] ?? null;
         break;
+      case '--html':
+        htmlFile = argv[++i] ?? null;
+        break;
+      case '--watch':
+        watch = true;
+        break;
       case '--json':
         json = true;
         break;
@@ -95,12 +110,15 @@ export function parseArgs(argv: string[]): ParsedArgs {
 
   let command: Command = 'help';
   const first = positionals[0];
-  if (first === 'once' || first === 'watch' || first === 'help') command = first;
-  else if (first !== undefined) errors.push(`Unknown command: ${first}`);
+  if (first === 'once' || first === 'watch' || first === 'dashboard' || first === 'help') {
+    command = first;
+  } else if (first !== undefined) {
+    errors.push(`Unknown command: ${first}`);
+  }
 
   const scrumDir = positionals[1] ?? '';
-  if ((command === 'once' || command === 'watch') && scrumDir === '') {
-    errors.push('A .scrum/<slug> directory argument is required.');
+  if ((command === 'once' || command === 'watch' || command === 'dashboard') && scrumDir === '') {
+    errors.push('A directory argument is required.');
     command = 'help';
   }
 
@@ -111,6 +129,8 @@ export function parseArgs(argv: string[]): ParsedArgs {
     intervalSec,
     statusFile,
     eventsFile,
+    htmlFile,
+    watch,
     json,
     errors,
   };
@@ -122,18 +142,22 @@ export function helpText(): string {
     'scrum-watchdog — flag silent hangs and mechanical thrashing in Scrum agent runs.',
     '',
     'Usage:',
-    '  scrum-watchdog once  <scrumDir> [options]   Evaluate once, write status, print summary.',
-    '  scrum-watchdog watch <scrumDir> [options]   Poll on an interval until interrupted.',
+    '  scrum-watchdog once      <scrumDir> [options]   Evaluate once, write status, print summary.',
+    '  scrum-watchdog watch     <scrumDir> [options]   Poll one project on an interval until interrupted.',
+    '  scrum-watchdog dashboard <scrumRoot> [options]  Render a rolled-up view of every project under a root.',
     '',
     'Arguments:',
-    '  <scrumDir>   Path to a single project dir, e.g. .scrum/fix-login-typo',
+    '  <scrumDir>    A single project dir, e.g. .scrum/fix-login-typo',
+    '  <scrumRoot>   The .scrum/ root (or a single project dir) to aggregate',
     '',
     'Options:',
     '  --heartbeat-min <N>   Stuck threshold in minutes (default 5, env SCRUM_WATCHDOG_HEARTBEAT_MIN).',
     '  --loop-k <K>          Thrashing threshold: same signature K times (default 3, min 2).',
-    '  --interval-sec <S>    Poll interval for watch (default 20).',
+    '  --interval-sec <S>    Poll interval for watch / dashboard --watch (default 20).',
     '  --status-file <path>  Status JSON path (default <scrumDir>/watchdog-status.json).',
     '  --events <path>       Optional JSON-lines event stream to fold in.',
+    '  --html <path>         dashboard: write a self-contained HTML page instead of a text table.',
+    '  --watch               dashboard: keep re-rendering on the interval until interrupted.',
     '  --json                Also print the full status JSON.',
     '  -h, --help            Show this help.',
     '',

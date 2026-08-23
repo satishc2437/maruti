@@ -43,6 +43,20 @@ describe('parseArgs', () => {
     expect(a.errors.some((e) => e.includes('required'))).toBe(true);
   });
 
+  it('parses the dashboard command with --html and --watch', () => {
+    const a = parseArgs(['dashboard', '.scrum', '--html', 'out/index.html', '--watch']);
+    expect(a.command).toBe('dashboard');
+    expect(a.scrumDir).toBe('.scrum');
+    expect(a.htmlFile).toBe('out/index.html');
+    expect(a.watch).toBe(true);
+  });
+
+  it('requires a directory for dashboard', () => {
+    const a = parseArgs(['dashboard']);
+    expect(a.command).toBe('help');
+    expect(a.errors.some((e) => e.includes('required'))).toBe(true);
+  });
+
   it('falls back and warns on an out-of-range number', () => {
     const a = parseArgs(['once', 'd', '--loop-k', '1']);
     expect(a.config.loopRepeats).toBe(3);

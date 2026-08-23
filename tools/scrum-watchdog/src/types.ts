@@ -28,6 +28,8 @@ export interface WorkLogEntry {
   timestamp: string | null;
   /** Epoch milliseconds for `timestamp`, or null if unparseable. */
   timestampMs: number | null;
+  /** The `requirement` field (acceptance-criterion ref, e.g. `AC-1`, or `n/a`). */
+  requirement: string;
   /** The `**Doing**` line body, trimmed, if present. */
   doing: string;
   /** The `**Blockers**` line body, trimmed, if present. */

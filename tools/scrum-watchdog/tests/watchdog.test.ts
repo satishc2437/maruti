@@ -22,6 +22,7 @@ const wl = (over: Partial<WorkLogEntry> = {}): WorkLogEntry => ({
   status: 'in-progress',
   timestamp: '2026-08-20T21:59:00Z',
   timestampMs: Date.parse('2026-08-20T21:59:00Z'),
+  requirement: 'AC-1',
   doing: 'work',
   blockers: 'none',
   ...over,
