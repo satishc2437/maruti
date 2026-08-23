@@ -28,6 +28,25 @@ Execute these phases in order. Use `TodoWrite` to track progress.
 
 Attempt to read `.scrum/lessons.md` in the consumer repo's working directory. If it exists, load its contents (first 5KB) into your planning context. If it does not exist, proceed without it. Lessons are project-agnostic guidance distilled from prior retrospectives; use them to inform the Phase 2 plan.
 
+### Phase 0.5 — Pre-flight auth gate
+
+Before you fetch the work item, branch, create worktrees, or dispatch any
+subagent, verify — **presence and validity only; never read, echo, or store any
+credential value** — that the credentials this run needs are established, so no
+phase (and no worker) blocks silently on a login prompt:
+
+- **Tracker auth.** `gh`: `gh auth status` exits 0 with an authenticated account.
+  `ado`: the `mcp__azure-devops-mcp__*` tools / `az` session are available and valid.
+- **Git remote push credentials.** Probe with `git ls-remote origin HEAD` (read-only)
+  so Phase 6's push won't fail after cycles of work.
+- **Any provider / API sessions** the repo's tests or tooling require (registry
+  token, model/provider session), scoped to what this repo actually uses.
+
+If any check fails, **STOP before doing any work.** Report exactly which
+credential is missing and the single command to establish it (e.g. "GitHub CLI is
+not authenticated — run `gh auth login`"). Do not fetch, branch, or dispatch. Once
+valid, proceed unchanged.
+
 ### Phase 1 — Fetch the work item
 
 - **`ado`**: use the `mcp__azure-devops-mcp__*` tools. Read the work item's title, description, acceptance criteria, attachments, and any linked items. If those tools are not available, stop and tell the user the MCP server is not installed.
