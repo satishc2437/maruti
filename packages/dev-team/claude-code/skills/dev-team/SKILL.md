@@ -67,6 +67,7 @@ Before dispatching ANY subagent, you MUST produce a structured plan and get the 
      - `agentId` — format `<role>-<n>` (e.g., `software-developer-1`, `software-developer-2`, `code-reviewer-1`).
      - `role` — the subagent role (must match an existing subagent type).
      - `responsibility` — 1-sentence description of what this agent owns.
+     The standard dev-team roster includes the `software-developer-N` implementers, `code-reviewer-1` (tests/lint/correctness gate), and `drift-critic-1` (requirement-level scope/goal-drift gate); include the latter two in every plan.
    - **Task breakdown**: list of tasks. Each task has:
      - `taskId` — `task-<n>` (sequential).
      - `taskName` — human-friendly name.
@@ -150,8 +151,8 @@ If multiple subagents are dispatched in the same cycle, dispatch them in a singl
 
 For dev-team specifically:
 
-- Cycle 1 onward: dispatch all `software-developer-N` agents for their assigned tasks (parallel) with the absolute worktree path and the sub-branch name in addition to the Scrum dispatch params. After they return in this same cycle, dispatch `code-reviewer-1` (sequentially after devs) with the list of worktree paths, sub-branches, work-item description and acceptance criteria, and the original task decomposition.
-- Subsequent cycles (if reviewer returned `no-go` in the prior cycle): re-dispatch only the devs whose tasks the reviewer flagged, with the reviewer's `Required actions` verbatim. Then dispatch `code-reviewer-1` again.
+- Cycle 1 onward: dispatch all `software-developer-N` agents for their assigned tasks (parallel) with the absolute worktree path and the sub-branch name in addition to the Scrum dispatch params. After they return in this same cycle, dispatch the reviewers (sequentially after devs): `code-reviewer-1` with the list of worktree paths, sub-branches, work-item description and acceptance criteria, and the original task decomposition; and `drift-critic-1` with the same worktree/sub-branch/feature-branch pointers **plus the active requirement pointer** — the `docs/requirements/REQ-NNN-*.md` path if the work item's body links one, and the work item's own acceptance criteria. The two reviewers are independent read-only passes and may be dispatched in the same message.
+- Subsequent cycles (if the reviewer returned `no-go` OR the drift-critic returned `drift` in the prior cycle): re-dispatch only the devs whose tasks were flagged, with the reviewer's `Required actions` and/or the drift-critic's `Re-scope actions` verbatim. Then dispatch `code-reviewer-1` and `drift-critic-1` again.
 
 #### 4.2 Wait and collect
 
@@ -208,7 +209,7 @@ If the user interrupts mid-loop with a status request (e.g., "where are we?", "w
 
 #### 4.8 Completion check
 
-If all tasks are `done` AND the latest `code-reviewer` verdict is `go`: exit the loop and proceed to Phase 5. Otherwise: increment `cycle` and go to 4.1.
+If all tasks are `done` AND the latest `code-reviewer` verdict is `go` AND the latest `drift-critic` verdict is `aligned`: exit the loop and proceed to Phase 5. A `drift` verdict blocks completion exactly like a `no-go` — re-scope and re-dispatch. Otherwise: increment `cycle` and go to 4.1.
 
 ### Phase 5 — Retrospective + lessons
 
@@ -306,7 +307,7 @@ Each subagent's response MUST end with a single markdown block matching this sch
 
 ## Tools you rely on
 
-- `Task` — dispatch `software-developer` and `code-reviewer` subagents. Use with `subagent_type: <role>` and `run_in_background: true` for parallel fan-out; the call returns a `task_id` immediately and the subagent runs asynchronously. Without `run_in_background`, the call is synchronous and blocks until the subagent returns.
+- `Task` — dispatch `software-developer`, `code-reviewer`, and `drift-critic` subagents. Use with `subagent_type: <role>` and `run_in_background: true` for parallel fan-out; the call returns a `task_id` immediately and the subagent runs asynchronously. Without `run_in_background`, the call is synchronous and blocks until the subagent returns.
 - `TaskOutput(task_id, block=true)` — wait explicitly for a background subagent's completion. For local-agent tasks, do NOT `Read` the `.output` file the result references; the file is the subagent's full JSONL transcript and will overflow your context. Use the Agent return value (delivered automatically) instead.
 - `TaskStop(task_id)` — terminate a runaway background subagent.
 - `Bash` — `gh`, `az`, `git`, test/lint commands.

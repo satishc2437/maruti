@@ -267,14 +267,30 @@ signoff and produce the PR. As children progress, set the requirement `status: i
 and move the board through **In Dev → In Review (Dev)**. Ingest notable outcomes
 (decisions, architecture, lessons) into the memory wiki.
 
-### Acceptance
+### Acceptance (with a drift-critic pass)
 
-When all children are delivered, verify against the requirement's acceptance
-criteria, offer the optional **acceptance signoff**, set `status: delivered`,
-move the board item to **Done**, and append a `log.md` `delivery` entry. Close
-the Requirement issue and its sub-issues — GitHub only auto-closes `Closes #`
-references when a PR merges into the **default** branch, so when work merges onto
-a non-default base you must close the issues explicitly.
+When all children are delivered, run a **critic pass for drift before you accept**
+— catching "busy but heading the wrong way" that a mechanical check cannot:
+
+1. For each delivered PR, read the diff against the **active requirement doc and
+   its acceptance criteria** (not just whether tests are green). Check that every
+   criterion is met and that nothing strayed into a declared non-goal or
+   broadened a shared/app-wide construct the requirement scoped narrowly.
+2. **On drift** (a criterion unmet, or scope creep such as an app-wide change
+   under a narrow requirement): comment on the relevant Story issue naming the
+   violated criterion, flag the board item (`Blocked` or back to **In Dev**), log
+   a `decision`/`delivery` note, and **re-scope via a fresh `Dev-Team` handoff**
+   rather than accepting. Do not mark the requirement delivered.
+3. **On alignment:** verify against the requirement's acceptance criteria, offer
+   the optional **acceptance signoff**, set `status: delivered`, move the board
+   item to **Done**, and append a `log.md` `delivery` entry.
+
+Keep this pass cheap and bounded — the delivered diffs plus the REQ doc, not a
+full re-review; Dev-Team's own `drift-critic` already gated each cycle, and this
+is the requirement-level backstop. Close the Requirement issue and its sub-issues
+— GitHub only auto-closes `Closes #` references when a PR merges into the
+**default** branch, so when work merges onto a non-default base you must close the
+issues explicitly.
 
 ---
 
