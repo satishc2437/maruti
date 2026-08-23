@@ -49,7 +49,7 @@ uv run python -m agent_memory
 uvx --from . python -m agent_memory
 
 # Using uvx directly from GitHub (no checkout)
-uvx --from "git+https://github.com/satishc2437/maruti.git@main#subdirectory=mcp-tools/agent-memory" \
+uvx --from "git+https://github.com/satishc-dev/maruti.git@main#subdirectory=mcp-tools/agent-memory" \
   python -m agent_memory
 
 # Standard execution (if dependencies installed globally)
@@ -120,7 +120,7 @@ uv run pytest --cov --cov-fail-under=95
           "command": "uvx",
           "args": [
                 "--from",
-                "git+https://github.com/satishc2437/maruti.git@main#subdirectory=mcp-tools/agent-memory",
+                "git+https://github.com/satishc-dev/maruti.git@main#subdirectory=mcp-tools/agent-memory",
                 "python",
                 "-m",
                 "agent_memory"
@@ -149,7 +149,7 @@ For one-time usage without installation:
 uvx --from /path/to/mcp-tools/agent-memory python -m agent_memory
 
 # Or fetch directly from GitHub (no checkout)
-uvx --from "git+https://github.com/satishc2437/maruti.git@main#subdirectory=mcp-tools/agent-memory" \
+uvx --from "git+https://github.com/satishc-dev/maruti.git@main#subdirectory=mcp-tools/agent-memory" \
   python -m agent_memory
 ```
 

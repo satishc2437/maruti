@@ -14,14 +14,14 @@ A multi-agent software development team for Claude Code. Drives a single work it
 **Claude Code** — from a Claude Code session in the target repo:
 
 ```
-/plugin marketplace add satishc2437/maruti
+/plugin marketplace add satishc-dev/maruti
 /plugin install dev-team@maruti
 ```
 
 **GitHub Copilot CLI** — from a Copilot CLI session in the target repo:
 
 ```
-copilot plugin marketplace add satishc2437/maruti
+copilot plugin marketplace add satishc-dev/maruti
 copilot plugin install dev-team@maruti
 ```
 

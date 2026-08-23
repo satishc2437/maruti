@@ -16,7 +16,7 @@ An MCP (Model Context Protocol) server that launches a Chromium-based browser in
 ### Run from GitHub (npx)
 
 ```bash
-npx --package="git+https://github.com/satishc2437/maruti.git#subdirectory=mcp-tools/browser-pilot" browser-pilot
+npx --package="git+https://github.com/satishc-dev/maruti.git#subdirectory=mcp-tools/browser-pilot" browser-pilot
 ```
 
 ### Run locally (development)

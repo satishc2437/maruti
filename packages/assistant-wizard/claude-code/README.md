@@ -15,7 +15,7 @@ The skill auto-iterates builder ↔ reviewer up to **3 iterations** on `no-go`. 
 Two-step flow from a Claude Code session in the target repo, no local checkout required:
 
 ```
-/plugin marketplace add satishc2437/maruti
+/plugin marketplace add satishc-dev/maruti
 /plugin install assistant-wizard@maruti
 ```
 
@@ -24,7 +24,7 @@ The marketplace manifest lives at `.claude-plugin/marketplace.json` in the marut
 To pin the marketplace to a specific tag or branch (rather than the default branch), add a ref suffix:
 
 ```
-/plugin marketplace add satishc2437/maruti@<tag-or-branch>
+/plugin marketplace add satishc-dev/maruti@<tag-or-branch>
 ```
 
 ### Option B — from a local checkout

@@ -7,7 +7,7 @@ Installable form of Marketing-Guru for use in GitHub Copilot CLI as a skill.
 From a Copilot CLI session in the target repository:
 
 ```
-copilot plugin marketplace add satishc2437/maruti
+copilot plugin marketplace add satishc-dev/maruti
 copilot plugin install marketing-guru@maruti
 ```
 

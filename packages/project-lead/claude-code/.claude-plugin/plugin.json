@@ -3,6 +3,6 @@
   "version": "0.1.0",
   "description": "Stakeholder-facing Project Lead agent that owns requirements, keeps a Project Memory wiki and a linked GitHub Project Kanban, and delivers via guided handoff to pm-team and dev-team. Never writes specs or code itself.",
   "author": {
-    "name": "satishc2437"
+    "name": "satishc-dev"
   }
 }

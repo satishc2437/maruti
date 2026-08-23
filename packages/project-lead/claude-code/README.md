@@ -15,7 +15,7 @@ Two-step flow from a Claude Code session in the target repo, no local checkout
 required:
 
 ```
-/plugin marketplace add satishc2437/maruti
+/plugin marketplace add satishc-dev/maruti
 /plugin install project-lead@maruti
 ```
 
@@ -26,7 +26,7 @@ registered across sessions.
 To pin the marketplace to a specific tag or branch:
 
 ```
-/plugin marketplace add satishc2437/maruti@<tag-or-branch>
+/plugin marketplace add satishc-dev/maruti@<tag-or-branch>
 ```
 
 ### Option B — from a local checkout

@@ -11,7 +11,7 @@ copilot plugin install <path-to-maruti>/packages/browser-pilot/github-copilot
 Or via the maruti marketplace (once published):
 
 ```
-copilot plugin marketplace add satishc2437/maruti
+copilot plugin marketplace add satishc-dev/maruti
 copilot plugin install browser-pilot@maruti
 ```
 

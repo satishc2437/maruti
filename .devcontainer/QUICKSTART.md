@@ -22,7 +22,7 @@ Make sure you have these installed:
 ### Step 1: Open the Project
 ```bash
 # If you haven't cloned yet
-git clone https://github.com/satishc2437/maruti.git
+git clone https://github.com/satishc-dev/maruti.git
 cd maruti
 
 # Open in VS Code

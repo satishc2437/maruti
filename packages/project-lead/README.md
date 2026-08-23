@@ -73,14 +73,14 @@ A full session, start to finish:
 **Claude Code** — from a Claude Code session in the target repo:
 
 ```
-/plugin marketplace add satishc2437/maruti
+/plugin marketplace add satishc-dev/maruti
 /plugin install project-lead@maruti
 ```
 
 **GitHub Copilot CLI** — from a Copilot CLI session in the target repo:
 
 ```
-copilot plugin marketplace add satishc2437/maruti
+copilot plugin marketplace add satishc-dev/maruti
 copilot plugin install project-lead@maruti
 ```
 

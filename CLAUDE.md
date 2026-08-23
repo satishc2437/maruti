@@ -23,7 +23,7 @@ These are enforced by `docs/Constitution.md` and matter for every change:
 
 1. **Tool isolation (MUST).** Code in one `mcp-tools/<a>/` MUST NOT import from another `mcp-tools/<b>/`. There is no shared internal library. If real sharing is needed, promote it to an external package — do not create a repo-internal shared module.
 2. **Tool-local everything.** Each tool owns its own `pyproject.toml`, `src/<pkg>/`, `tests/`, and `README.md`. Keep PRs scoped to a single tool when possible.
-3. **uv/uvx distribution contract.** Every tool must be runnable both as `uv run <tool>` locally and via `uvx --from "git+https://github.com/satishc2437/maruti.git@<ref>#subdirectory=mcp-tools/<tool>" python -m <module>`. Each tool's README must contain a working `uvx` snippet.
+3. **uv/uvx distribution contract.** Every tool must be runnable both as `uv run <tool>` locally and via `uvx --from "git+https://github.com/satishc-dev/maruti.git@<ref>#subdirectory=mcp-tools/<tool>" python -m <module>`. Each tool's README must contain a working `uvx` snippet.
 4. **MCP stdio servers.** Tools follow a `src/<pkg>/__main__.py` → `server.py` pattern that registers MCP tools/resources and speaks JSON-RPC over stdio. The `mcp` import is guarded so tests can import tool code without the MCP runtime.
 5. **Devcontainer-first.** Everything (creation, install, run, lint, test) must work inside the dev container. No undocumented host-only steps.
 
@@ -74,7 +74,7 @@ cd mcp-tools/<tool> && uv run pytest --cov --cov-fail-under=95
 2. Add the path to `[tool.uv.workspace].members` in the root `pyproject.toml`.
 3. Layout: `src/<pkg>/{__init__.py, __main__.py, server.py}` plus `tests/`. Follow the `agent-memory` pattern — `__main__.py` dispatches to `server.run_server()` via `asyncio.run`.
 4. Declare a `[project.scripts]` entry so `uv run <tool>` works.
-5. Write a README with a copy/pasteable `uvx` snippet targeting `github.com/satishc2437/maruti`.
+5. Write a README with a copy/pasteable `uvx` snippet targeting `github.com/satishc-dev/maruti`.
 6. Rebuild the devcontainer (or run `.devcontainer/post-create.sh`) so auto-discovery installs it editable.
 
 ## Definition of Done (per tool)

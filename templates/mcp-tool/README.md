@@ -9,7 +9,7 @@
 uv run {{TOOL_HYPHEN}}
 
 # Via uvx, directly from GitHub (replace <ref> with a tag/commit)
-uvx --from "git+https://github.com/satishc2437/maruti.git@<ref>#subdirectory=mcp-tools/{{TOOL_HYPHEN}}" \
+uvx --from "git+https://github.com/satishc-dev/maruti.git@<ref>#subdirectory=mcp-tools/{{TOOL_HYPHEN}}" \
   python -m {{TOOL_MODULE}}
 ```
 
@@ -21,7 +21,7 @@ uvx --from "git+https://github.com/satishc2437/maruti.git@<ref>#subdirectory=mcp
     "command": "uvx",
     "args": [
       "--from",
-      "git+https://github.com/satishc2437/maruti.git@main#subdirectory=mcp-tools/{{TOOL_HYPHEN}}",
+      "git+https://github.com/satishc-dev/maruti.git@main#subdirectory=mcp-tools/{{TOOL_HYPHEN}}",
       "python",
       "-m",
       "{{TOOL_MODULE}}"

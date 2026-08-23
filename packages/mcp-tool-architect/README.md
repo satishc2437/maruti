@@ -17,14 +17,14 @@ It does **not** implement the tool. It produces the artifacts an implementer (or
 **Claude Code** — from a Claude Code session in the target repo:
 
 ```
-/plugin marketplace add satishc2437/maruti
+/plugin marketplace add satishc-dev/maruti
 /plugin install mcp-tool-architect@maruti
 ```
 
 **GitHub Copilot CLI** — from a Copilot CLI session in the target repo:
 
 ```
-copilot plugin marketplace add satishc2437/maruti
+copilot plugin marketplace add satishc-dev/maruti
 copilot plugin install mcp-tool-architect@maruti
 ```
 

@@ -13,8 +13,8 @@ Maruti is registered as a marketplace for both supported platforms:
 
 | Platform | Marketplace manifest | Add to client |
 |---|---|---|
-| Claude Code | [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) | `/plugin marketplace add satishc2437/maruti` |
-| GitHub Copilot CLI | [`.github/plugin/marketplace.json`](.github/plugin/marketplace.json) | `copilot plugin marketplace add satishc2437/maruti` |
+| Claude Code | [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) | `/plugin marketplace add satishc-dev/maruti` |
+| GitHub Copilot CLI | [`.github/plugin/marketplace.json`](.github/plugin/marketplace.json) | `copilot plugin marketplace add satishc-dev/maruti` |
 
 Once the marketplace is added, install any plugin by name:
 
@@ -66,7 +66,7 @@ mcp-tools/
 General install snippet for an MCP client:
 
 ```bash
-uvx --from "git+https://github.com/satishc2437/maruti.git@<ref>#subdirectory=mcp-tools/<tool-folder>" \
+uvx --from "git+https://github.com/satishc-dev/maruti.git@<ref>#subdirectory=mcp-tools/<tool-folder>" \
   python -m <tool_module>
 ```
 
@@ -152,7 +152,7 @@ For the by-hand path, see [`packages/README.md`](packages/README.md).
 2. Add the path to `[tool.uv.workspace].members` in the root `pyproject.toml`.
 3. Layout: `src/<pkg>/{__init__.py, __main__.py, server.py}` plus `tests/`.
 4. Declare a `[project.scripts]` entry so `uv run <tool>` works.
-5. Write a README with a copy/pasteable `uvx` snippet targeting `github.com/satishc2437/maruti`.
+5. Write a README with a copy/pasteable `uvx` snippet targeting `github.com/satishc-dev/maruti`.
 6. Rebuild the devcontainer (or run `.devcontainer/post-create.sh`) so auto-discovery installs it editable.
 
 ## Governance

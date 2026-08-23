@@ -99,7 +99,7 @@ drift from the source, the build fails.
 **Claude Code** — install via the [marketplace manifest](../.claude-plugin/marketplace.json) at the repo root. Two-step flow, both run from a Claude Code session in the target repo:
 
 ```
-/plugin marketplace add satishc2437/maruti
+/plugin marketplace add satishc-dev/maruti
 /plugin install <name>@maruti
 ```
 
@@ -114,7 +114,7 @@ If you already have maruti cloned locally, you can install a single plugin from 
 **GitHub Copilot CLI** — install via the [marketplace manifest](../.github/plugin/marketplace.json) at the repo root. Two-step flow, both run from a Copilot CLI session in the target repo:
 
 ```
-copilot plugin marketplace add satishc2437/maruti
+copilot plugin marketplace add satishc-dev/maruti
 copilot plugin install <name>@maruti
 ```
 

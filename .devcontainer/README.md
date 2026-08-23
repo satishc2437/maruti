@@ -26,7 +26,7 @@ A development container (dev container) is a running Docker container with a wel
 
 1. **Clone the repository** (if you haven't already):
    ```bash
-   git clone https://github.com/satishc2437/maruti.git
+   git clone https://github.com/satishc-dev/maruti.git
    cd maruti
    ```
 

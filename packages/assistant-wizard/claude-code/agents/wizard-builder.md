@@ -124,12 +124,12 @@ description: <one-sentence description>
 - **Body parity:** when both Claude Code and Copilot variants of the same narrative primitive (skill ↔ chat mode) are emitted, their body content (everything after frontmatter) must be **byte-identical**. Only the frontmatter differs.
 - **READMEs must include the maruti marketplace install snippet** in the Claude Code variant:
   ```
-  /plugin marketplace add satishc2437/maruti
+  /plugin marketplace add satishc-dev/maruti
   /plugin install <name>@maruti
   ```
   …and the equivalent Copilot CLI plugin-install snippet in the Copilot variant:
   ```
-  copilot plugin marketplace add satishc2437/maruti
+  copilot plugin marketplace add satishc-dev/maruti
   copilot plugin install <name>@maruti
   ```
   Both variants may also describe the manual-vendor fallback (copy the file directly into the target repo's `.claude/` or `.github/` tree).

@@ -1,14 +1,14 @@
 {
   "name": "maruti",
   "owner": {
-    "name": "satishc2437"
+    "name": "satishc-dev"
   },
   "plugins": [
     {
       "name": "pm-team",
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/satishc2437/maruti.git",
+        "url": "https://github.com/satishc-dev/maruti.git",
         "path": "packages/pm-team/claude-code"
       },
       "description": "Multi-agent product management team that gathers intent, produces feature specs, gates them through a reviewer, opens a spec PR, and on approval seeds the Azure DevOps or GitHub Kanban board with work items for handoff to dev-team."
@@ -17,7 +17,7 @@
       "name": "dev-team",
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/satishc2437/maruti.git",
+        "url": "https://github.com/satishc-dev/maruti.git",
         "path": "packages/dev-team/claude-code"
       },
       "description": "Multi-agent software development team that drives a work item from Azure DevOps or GitHub through design, parallel implementation, code review, and PR creation."
@@ -26,7 +26,7 @@
       "name": "assistant-wizard",
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/satishc2437/maruti.git",
+        "url": "https://github.com/satishc-dev/maruti.git",
         "path": "packages/assistant-wizard/claude-code"
       },
       "description": "Designs and generates new custom subagents, skills, slash commands, chat modes, and prompt files for Claude Code and GitHub Copilot."
@@ -35,7 +35,7 @@
       "name": "mcp-tool-architect",
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/satishc2437/maruti.git",
+        "url": "https://github.com/satishc-dev/maruti.git",
         "path": "packages/mcp-tool-architect/claude-code"
       },
       "description": "Designs decision-ready MCP tool architectures and emits durable spec/guardrails/success-criteria docs."
@@ -44,7 +44,7 @@
       "name": "marketing-guru",
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/satishc2437/maruti.git",
+        "url": "https://github.com/satishc-dev/maruti.git",
         "path": "packages/marketing-guru/claude-code"
       },
       "description": "Proactive MBA-grade marketing advisor for an MBA bike-company simulation; weighs in on strategy, performance, and competitive positioning."
@@ -53,7 +53,7 @@
       "name": "project-lead",
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/satishc2437/maruti.git",
+        "url": "https://github.com/satishc-dev/maruti.git",
         "path": "packages/project-lead/claude-code"
       },
       "description": "Stakeholder-facing Project Lead agent that owns requirements as official repo docs, keeps a Project Memory wiki and a linked GitHub Project Kanban, and delivers via guided handoff to pm-team and dev-team. Never writes specs or code itself."
@@ -62,7 +62,7 @@
       "name": "browser-pilot",
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/satishc2437/maruti.git",
+        "url": "https://github.com/satishc-dev/maruti.git",
         "path": "packages/browser-pilot/claude-code"
       },
       "description": "Skill that teaches agents how to effectively use the browser-pilot MCP server for Chrome, Edge, Brave, and Chromium automation via Playwright CDP."

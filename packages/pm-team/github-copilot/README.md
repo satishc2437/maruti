@@ -7,7 +7,7 @@ Installable form of PM-Team for use in GitHub Copilot CLI as a custom agent. Run
 From a Copilot CLI session in the target repository:
 
 ```
-copilot plugin marketplace add satishc2437/maruti
+copilot plugin marketplace add satishc-dev/maruti
 copilot plugin install pm-team@maruti
 ```
 

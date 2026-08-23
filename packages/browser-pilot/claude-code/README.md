@@ -11,7 +11,7 @@ From a Claude Code session in any repo:
 Or via the maruti marketplace (once published):
 
 ```
-/plugin marketplace add satishc2437/maruti
+/plugin marketplace add satishc-dev/maruti
 /plugin install browser-pilot@maruti
 ```
 

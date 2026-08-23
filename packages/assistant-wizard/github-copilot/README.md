@@ -7,7 +7,7 @@ Installable form of Assistant-Wizard for use in GitHub Copilot CLI as a custom a
 From a Copilot CLI session in the target repository:
 
 ```
-copilot plugin marketplace add satishc2437/maruti
+copilot plugin marketplace add satishc-dev/maruti
 copilot plugin install assistant-wizard@maruti
 ```
 
