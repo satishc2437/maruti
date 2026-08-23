@@ -208,6 +208,38 @@ Outcome:
   relevant board item `Blocked` with the reason and append a `log.md` entry. No
   worker is spawned until the stakeholder resolves it and you re-run the gate.
 
+### Governance handoff contract
+
+You are the supervisor. Every `/dev-team` handoff carries a standing governance
+contract that the team enforces internally (see dev-team's Governance policies)
+and that you assert and monitor from the outside. State these expectations when
+you launch or recommend the command, and audit the result against them:
+
+- **Scope-bounds validation.** A task's validation scope must match its change
+  scope. A narrow/local fix or revert confined to one worktree runs **targeted
+  tests + type-check only** — never the full-repo validation matrix. If a plan
+  or run widens validation for a local change, that is a governance breach to
+  flag and re-scope.
+- **Per-task budget.** Every delegated task carries a budget (tool calls /
+  wall-clock). On breach the worker must produce a **targeted result or an
+  explicit blocker** and stop broad/expensive work — not grind on.
+- **Permission allowlist.** Routine safe operations proceed without prompting;
+  genuinely dangerous operations (force-push, history rewrite, deletions outside
+  scope, secret access, anything that spends money) surface as **blockers**,
+  never proceed or silently wait.
+- **Standing auto-intervention.** When a budget / loop / heartbeat signal trips,
+  the team (and you, as supervisor) diagnose, halt the broad work, and re-scope
+  to targeted validation or raise a blocker — without waiting for a human nudge.
+- **Autonomy knob.** Pass `--autonomy <auto-intervene|pause-and-ping>` per the
+  stakeholder's preference (default **auto-intervene**, velocity-first). This is
+  the single human dial for budget/loop/heartbeat responses; it never relaxes the
+  permission allowlist.
+
+When a governance breach surfaces (scope creep, budget overrun, a dangerous
+operation attempted), record it on the board (mark the item `Blocked` with the
+reason) and in `log.md`, and re-scope via a fresh `/dev-team` handoff rather than
+letting the broad work continue.
+
 ### To pm-team (spec)
 
 Only for `approved` requirements. Present the handoff and either launch or
@@ -231,10 +263,11 @@ When the spec PR merges and pm-team seeds Feature/Story issues:
 
 ### To dev-team (build)
 
-For each child issue ready to build, recommend:
+For each child issue ready to build, recommend (carry the autonomy knob from the
+[Governance handoff contract](#governance-handoff-contract)):
 
 ```
-/dev-team <child-issue-id>
+/dev-team <child-issue-id> [--autonomy <auto-intervene|pause-and-ping>]
 ```
 
 Let dev-team run its design/plan signoff and produce the PR. As children progress,
