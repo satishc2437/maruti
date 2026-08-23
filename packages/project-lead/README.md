@@ -9,6 +9,60 @@ The Lead maintains two complementary surfaces:
 
 Requirements are first-class, **official repo documents** under `docs/requirements/`, approved through a **requirement PR** before any spec work begins.
 
+## How to use this plugin
+
+You talk to the Project Lead in **plain language**; it captures what you need as an approved requirement and drives it to delivery through the pm-team and dev-team plugins — keeping the wiki and the Kanban board current the whole time. You never touch specs or code directly.
+
+A full session, start to finish:
+
+1. **Install it** — once per machine, once per repo. See [Install](#install) below. On **Claude Code** you drive it with the `/project-lead` slash command; on **GitHub Copilot CLI** you talk to the `Project-Lead` chat-mode agent.
+
+2. **Bootstrap the repo (once):**
+   ```
+   /project-lead bootstrap
+   ```
+   Scaffolds `.project-memory/`, `docs/requirements/`, the linked GitHub Project board, and the Requirement issue-type/label. Idempotent — safe to re-run.
+
+3. **Bring a need — just describe it:**
+   ```
+   /project-lead I want new contributors to have a one-page setup guide
+   ```
+   (or `/project-lead` with no text to brainstorm). The Lead interviews you and drafts an official `docs/requirements/REQ-NNN-<slug>.md`. Iterate with it until the requirement is ready (clear problem, testable acceptance criteria, explicit scope).
+
+4. **Approve it — the gate:**
+   ```
+   /project-lead approve REQ-001
+   ```
+   The Lead opens a **requirement PR**; you review and merge it (or give an express in-chat "approved"). This signoff is mandatory — nothing goes to spec or build before it.
+
+5. **Let it hand off to the teams.** Once approved, the Lead recommends `/pm-team` (to write specs) and then `/dev-team <issue>` (to build), one step at a time. You go through each team's own signoff gates; the Lead reconciles their PRs and issues back into the board and the wiki.
+
+6. **Check in any time:**
+   ```
+   /project-lead status     # the requirements → delivery funnel
+   /project-lead sync       # reconcile the board with the real issue/PR state
+   /project-lead lint       # health-check the Project Memory wiki
+   ```
+
+7. **Accept delivery.** When all child work is done, the Lead verifies it against your acceptance criteria, offers an optional acceptance signoff, and marks the requirement `delivered`.
+
+> **On GitHub Copilot CLI**, run the same flow by talking to the `Project-Lead` agent in natural language — e.g. "bootstrap this repo", "I need …", "approve REQ-001", "what's the status?" — instead of the slash command.
+>
+> **The golden rule:** you speak to the Lead; it delegates the work and keeps the record. It never writes specs or code itself.
+
+## What it can do (capabilities)
+
+| Capability | What it does for you | How to invoke |
+|---|---|---|
+| **Capture & refine requirements** | Turns a rough idea or notes into an official, testable `docs/requirements/REQ-NNN` document | `/project-lead <need>` · `/project-lead requirement <id\|new>` |
+| **Approval gate** | Formal signoff via a requirement PR before any spec or build starts | `/project-lead approve <id>` |
+| **Project Memory wiki** | An Obsidian-readable `.project-memory/` wiki that compounds decisions, architecture, risks, and history | maintained automatically; browse the folder |
+| **GitHub Project Kanban** | A live board showing the requirements → delivery funnel, with sub-issue roll-up | maintained automatically; view via `status` |
+| **Guided handoff** | Launches/recommends pm-team (specs) then dev-team (build) at the right moments and reconciles their output | automatic after approval |
+| **Status & reconciliation** | Funnel report, board-vs-reality sync, and wiki health-check | `/project-lead status` · `sync` · `lint` |
+| **End-to-end traceability** | Requirement → Feature → Story sub-issues, so any PR traces back to its requirement | automatic (GitHub) |
+| **Cross-platform** | Runs on Claude Code and GitHub Copilot CLI; degrades gracefully on Azure DevOps | — |
+
 ## Roles
 
 - **`project-lead`** (skill on Claude Code / chat-mode agent on Copilot) — the orchestrator and stakeholder interface. Captures and refines requirements, maintains the Project Memory and the GitHub Project Kanban, and runs the **guided-handoff** lifecycle: it launches/recommends `/pm-team` and `/dev-team` at the right moments and reconciles their outputs back into memory + the board. It respects the existing signoff gates of those teams and adds its own **requirements approval gate**.
