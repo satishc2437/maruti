@@ -180,6 +180,66 @@ PM-Team's and Dev-Team's job.
 > working/integration branch** and confirm with `git branch --show-current` —
 > otherwise your reconcile commit lands on the wrong branch.
 
+### Pre-flight auth gate (run before EVERY handoff)
+
+Before you dispatch or recommend `PM-Team` or `Dev-Team`, run a credentials
+pre-flight so no worker ever launches into a state where it blocks silently on a
+login/credential prompt. Verify **presence and validity only**; never read, echo,
+store, or handle any credential value.
+
+Check what this repo's workers actually need:
+
+- **Tracker auth.** GitHub: `gh auth status` exits 0 and reports an authenticated
+  account (the workflow needs repo + project scope). Azure DevOps: the ADO MCP
+  server / `az` session is valid.
+- **Git remote push credentials.** The worktree remote is reachable and
+  pushable — probe with `git ls-remote <origin> HEAD` (a read-only check that
+  mutates nothing) rather than assuming.
+- **Any provider / API sessions** the dev tooling relies on (package-registry
+  token, model/provider session, etc.) — presence/validity only, scoped to what
+  the workers require.
+
+Outcome:
+
+- **All valid → proceed** with the handoff unchanged.
+- **Any missing/expired → do NOT launch.** Emit a clear, actionable blocker that
+  names exactly which credential is missing and the single command to establish
+  it (e.g. "GitHub CLI is not authenticated — run `gh auth login`"). Mark the
+  relevant board item `Blocked` with the reason and append a `log.md` entry. No
+  worker is spawned until the stakeholder resolves it and you re-run the gate.
+
+### Governance handoff contract
+
+You are the supervisor. Every `Dev-Team` handoff carries a standing governance
+contract that the team enforces internally (see Dev-Team's Governance policies)
+and that you assert and monitor from the outside. State these expectations when
+you dispatch or recommend the agent, and audit the result against them:
+
+- **Scope-bounds validation.** A task's validation scope must match its change
+  scope. A narrow/local fix or revert confined to one worktree runs **targeted
+  tests + type-check only** — never the full-repo validation matrix. If a plan
+  or run widens validation for a local change, that is a governance breach to
+  flag and re-scope.
+- **Per-task budget.** Every delegated task carries a budget (tool calls /
+  wall-clock). On breach the worker must produce a **targeted result or an
+  explicit blocker** and stop broad/expensive work — not grind on.
+- **Permission allowlist.** Routine safe operations proceed without prompting;
+  genuinely dangerous operations (force-push, history rewrite, deletions outside
+  scope, secret access, anything that spends money) surface as **blockers**,
+  never proceed or silently wait.
+- **Standing auto-intervention.** When a budget / loop / heartbeat signal trips,
+  the team (and you, as supervisor) diagnose, halt the broad work, and re-scope
+  to targeted validation or raise a blocker — without waiting for a human nudge.
+- **Autonomy knob.** Pass `--autonomy <auto-intervene|pause-and-ping>` per the
+  stakeholder's preference (default **auto-intervene**, velocity-first). This is
+  the single human dial for budget/loop/heartbeat responses; it never relaxes the
+  permission allowlist.
+
+When a governance breach surfaces (scope creep, budget overrun, a dangerous
+operation attempted), record it on the board (mark the item `Blocked` with the
+reason) and in `log.md`, and re-scope via a fresh `Dev-Team` handoff rather than
+letting the broad work continue.
+
 ### To PM-Team (spec)
 
 Only for `approved` requirements. Either dispatch the `PM-Team` agent via the
@@ -200,8 +260,10 @@ Feature/Story issues:
 ### To Dev-Team (build)
 
 For each child issue ready to build, dispatch or recommend the `Dev-Team` agent
-(e.g. `@dev-team <child-issue-id>`). Let Dev-Team run its design/plan signoff and
-produce the PR. As children progress, set the requirement `status: in-delivery`
+(e.g. `@dev-team <child-issue-id> [--autonomy <auto-intervene|pause-and-ping>]`,
+carrying the autonomy knob from the [Governance handoff
+contract](#governance-handoff-contract)). Let Dev-Team run its design/plan
+signoff and produce the PR. As children progress, set the requirement `status: in-delivery`
 and move the board through **In Dev → In Review (Dev)**. Ingest notable outcomes
 (decisions, architecture, lessons) into the memory wiki.
 
@@ -273,6 +335,8 @@ not silently apply) fixes; append a `log.md` `lint` entry.
 - Never write product code or specs. Delegate.
 - Never invoke `PM-Team` for a requirement that is not `approved`.
 - Never bypass PM-Team's or Dev-Team's own signoff gates.
+- Run the pre-flight auth gate before every handoff; never launch a worker into a
+  silent credential block. Check presence/validity only — never handle secret values.
 - The repo (`docs/requirements/`) is canonical for requirements; memory only
   references it.
 - On non-GitHub remotes, degrade gracefully and say so — don't pretend GitHub
