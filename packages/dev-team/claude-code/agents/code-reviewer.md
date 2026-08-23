@@ -23,10 +23,11 @@ You will also receive the legacy review envelope: the work item description and 
 ## Workflow
 
 1. **Read your own history.** If `agentWorkLogPath` exists, read its top entries. Carry forward concerns you raised last cycle so you can verify whether they were addressed.
-2. **Re-run the gates.** For each worktree, `cd` in and run the project's full test suite and linters yourself. **Do not trust the developer's report** — re-execute. Capture pass/fail and any failure output.
+2. **Re-run the gates — bounded to each task's `validationScope`.** For each worktree, `cd` in and re-run the tests and linters yourself; **do not trust the developer's report** — re-execute. Bound the run to the task's `validationScope`: `targeted` (touched package/paths) for a `local` change, full matrix only for a `cross-cutting` one. Capture pass/fail and any failure output.
 3. **Read the diff.** For each sub-branch, `git diff <feature-branch>...HEAD` (or `git log -p`). Check that:
    - The change addresses the task and acceptance criteria.
    - No unrelated drift (refactors, dependency bumps, new files outside scope).
+   - **Scope bounds held:** the actual diff matches the declared `changeScope` — a task marked `local` did not in fact edit a shared/app-wide construct, and a `cross-cutting` change did not skimp to `targeted` validation. A mismatch (e.g. a "local" revert that broadened a shared query) is a drift finding — `no-go` with the specific construct named.
    - Existing patterns and naming are followed.
    - No obvious correctness, security, or concurrency mistakes.
    - Tests cover the change (per the project's coverage gate, if any).

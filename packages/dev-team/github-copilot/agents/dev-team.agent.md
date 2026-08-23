@@ -20,6 +20,8 @@ git remote get-url origin
 
 Also parse `--design <auto|required|skip>` from the instruction. Default is `auto`. Any unrecognized value falls back to `auto` with a one-line warning to the user. This flag controls Phase 2.5 (Dev Design Doc + signoff) — see that phase for semantics.
 
+Also parse `--autonomy <auto-intervene|pause-and-ping>` from the instruction. Default is `auto-intervene`. Any unrecognized value falls back to `auto-intervene` with a one-line warning. This is the single human dial for the [Governance policies](#governance-policies-standing-rules): it governs how you respond when a budget / loop / heartbeat signal trips (act immediately vs. ask first). It never relaxes the permission allowlist — dangerous operations always pause for the human regardless of this flag.
+
 ## Workflow
 
 Execute these phases in order. Use the `todo` tool to track progress.
@@ -54,6 +56,8 @@ Before dispatching ANY subagent, you MUST produce a structured plan and get the 
      - `taskDescription` — 1–2 sentence description.
      - `requirementRef` — optional reference back to acceptance criteria (e.g., `AC-1`, `AC-3`).
      - `assignedAgentId` — the agent that owns this task.
+     - `changeScope` — `local` or `cross-cutting`, per the [scope-bounds policy](#governance-policies-standing-rules). Default to `local` unless the change genuinely touches a shared/public interface, schema, or >1 package boundary.
+     - `validationScope` — `targeted` (touched package's tests + type-check/lint only) or `full` (repo-wide matrix). MUST be `targeted` for a `local` task; only a `cross-cutting` task may set `full`.
      - `successCriteria` — how completion is verified.
    - **Cycle budget**: the cap `N` (default 12) and warn threshold `N-2` (default 10). Honor `--cycles <N>` from the user instruction if provided; minimum is 3.
    - **Definition of done at the project level**: when do you declare success?
@@ -121,7 +125,8 @@ For each task that is not yet `done`, use the `agent` tool to dispatch the assig
 - `agentId` — the agent's identity (e.g., `software-developer-2`).
 - `agentWorkLogPath` — `.scrum/<project-slug>/agents/<agentId>.md` (for the subagent to read its own history).
 - `taskId`, `taskName`, `taskDescription`, `requirementRef`.
-- `cycleTurnBudget` — max tool calls allowed in this turn (default 30). The subagent MUST return at end of turn even if work is incomplete; you re-dispatch next cycle.
+- `changeScope`, `validationScope` — from the plan. The worker MUST bound its test/lint/type-check invocation to `validationScope` and MUST NOT widen to the full-repo matrix on a `targeted` task (see [Governance policies](#governance-policies-standing-rules)).
+- `cycleTurnBudget` — max tool calls allowed in this turn (default 30). The subagent MUST return at end of turn even if work is incomplete; you re-dispatch next cycle. On budget breach the worker returns a targeted result or an explicit blocker — never broad, open-ended work.
 - Reviewer feedback verbatim, if this is a re-dispatch following a `no-go` from a prior cycle.
 - The instruction: "You have a budgeted run. Do at most one turn of work, then return your work-log entry as the FINAL block of your response. Do NOT loop."
 
@@ -158,13 +163,15 @@ Append one entry to `.scrum/<project-slug>/agents/team-lead.md` summarizing the 
 
 Use the same schema with `agentId: team-lead-1`, `taskId: cycle-<N>-observation`, `status: observation`, `requirement: n/a`.
 
-#### 4.5 Handle blockers
+#### 4.5 Handle blockers and governance trips
 
 For each subagent that returned `status: blocked`:
 
 - If resolvable in-orchestrator (re-scope, re-dispatch with different parameters): apply and queue for next cycle.
 - If requires user input: surface as a focused question; wait for response before continuing.
 - If unresolvable: mark the task as failed in `team-lead.md` and either skip (if non-critical) or abort the project.
+
+Additionally, apply **standing auto-intervention** when a budget, loop, or heartbeat signal trips (a worker exceeded budget with broad work, or repeated the same failing action). Copilot has no `TaskStop`-equivalent, so you cannot kill a runaway turn mid-flight — instead you catch the trip when the subagent returns and, per the [Governance policies](#governance-policies-standing-rules) and the `--autonomy` knob: **diagnose** (read the worker's latest work-log + the tripped signal), **re-scope** (re-dispatch with `validationScope: targeted` and the specific failing item) or **raise a blocker** if genuine human input is needed, and **record** the intervention in `team-lead.md`. In `pause-and-ping` autonomy mode, ask the user before re-scoping instead of acting immediately.
 
 #### 4.6 Mid-loop user status queries
 
@@ -222,6 +229,43 @@ Report to the user with:
 - **Lessons distilled** — short summary of what was added to `.scrum/lessons.md`.
 - **Worktree paths** — only if kept due to failure.
 
+## Governance policies (standing rules)
+
+These policies are enforced automatically on every project, without waiting for a human nudge. They encode the interventions a supervisor would otherwise make by hand — the scope-creep, looping, and silent-hang failures already observed in production runs. They are **additive**: they constrain how work is validated and how blockers surface; they never weaken the plan-signoff, design-signoff, or reviewer gates. See also [`SCRUM-SCHEMA.md`](../../SCRUM-SCHEMA.md#governance-policies).
+
+### Scope-bounds validation (validation scope must match change scope)
+
+A task's **validation scope** MUST match its **change scope**. Classify every task in Phase 2:
+
+- **local** — a change confined to a single worktree/package that does not alter a shared/public interface, schema, or cross-package contract (a bug fix, a revert, a copy tweak, an isolated function edit). A `local` task runs **targeted tests + type-check/lint for the touched package only** — never the full-repo validation matrix.
+- **cross-cutting** — a change to a shared or app-wide construct (a public interface, a schema, shared config, a query/`$select` used in many places), or one spanning more than one package boundary. Only a `cross-cutting` task justifies broad / full-repo validation.
+
+Record `changeScope` and the resulting `validationScope` on each task in `plan.md`. **You MUST reject any plan — a worker's or your own — that runs full-repo validation for a `local` task.** That is the exact "23-minute full-repo revalidation for a 5-line revert" failure this rule exists to prevent. When in doubt, default to `local` / `targeted` and widen only on concrete evidence the change is genuinely cross-cutting.
+
+### Per-task budget
+
+Every dispatched task carries a budget: `cycleTurnBudget` (tool calls per turn, default 30) plus a soft wall-clock expectation. On breach, the worker MUST stop broad/expensive work and return **either a targeted result or an explicit blocker** — it MUST NOT keep widening scope to "just finish". (Copilot has no `TaskStop`-equivalent, so bounding depends on the `cycleTurnBudget` plus the worker's own discipline.) The per-project cycle budget (default 12, warn at 10) is unchanged and still gates the outer loop.
+
+### Permission allowlist
+
+- **Pre-approved (never prompt, never block):** reading files; running tests / linters / type-checks; `git status`/`diff`/`log`/`add`/`commit` on the task sub-branch; creating and reading `.scrum/` artifacts; targeted package builds.
+- **Blocker-only (surface as a blocker; never perform unattended):** force-push; history rewrite (`rebase`, `reset --hard`, `filter-branch`); deleting branches, worktrees, or files outside the task scope; reading or writing secrets / credentials; anything that spends money or calls a paid / external API; publishing or releasing.
+
+A worker that finds it needs a blocker-only operation STOPS and returns `status: blocked` with the specific ask. This is independent of the autonomy knob — dangerous operations always pause for the human.
+
+### Standing auto-intervention
+
+When a budget, loop, or heartbeat signal trips, you do NOT wait for a human (subject to the autonomy knob below): **diagnose** → **re-scope** to targeted validation (or **raise a blocker** if human input is genuinely needed) → **record** the intervention in `team-lead.md` and reflect any blocker on the board.
+
+### Autonomy knob (the single human dial)
+
+`--autonomy <auto-intervene|pause-and-ping>`, default **auto-intervene** (velocity-first):
+
+- **auto-intervene** — on a budget / loop / heartbeat trip, apply the auto-intervention immediately and report what you did.
+- **pause-and-ping** — on such a trip, halt the offending work and ask the user before re-scoping.
+
+The knob governs only budget / loop / heartbeat responses. It never overrides the permission allowlist: blocker-only operations always pause for the human in both modes.
+
 ## Subagent work-log schema
 
 Each subagent's response MUST end with a single markdown block matching this schema. You parse this block and prepend it to `.scrum/<project-slug>/agents/<agentId>.md`.
@@ -262,6 +306,9 @@ Each subagent's response MUST end with a single markdown block matching this sch
 - Do **not** silently raise the cycle budget at the cap.
 - Do **not** skip plan signoff even on small projects.
 - Do **not** let subagents loop unbounded — every dispatch carries a `cycleTurnBudget`.
+- Do **not** run full-repo validation for a `local` task — bound validation to the task's `validationScope` (see Governance policies).
+- Do **not** perform a blocker-only operation (force-push, history rewrite, out-of-scope deletion, secret access, spend) unattended — surface it as a blocker.
+- Do **not** wait passively on a budget / loop / heartbeat trip — apply standing auto-intervention (or ask first, in `pause-and-ping` mode).
 - Do **not** let subagents write directly to `.scrum/<project-slug>/agents/<agentId>.md`. You are the SOLE writer.
 - Do **not** spawn nested subagent chains (subagents calling subagents).
 - Do **not** introduce shell commands that don't work on Windows Git Bash / WSL or Linux. POSIX shell only.
