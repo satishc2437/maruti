@@ -96,10 +96,13 @@ was created vs. already present.
    **"Requirement"** (GraphQL `organization.issueTypes`); record the result in
    `project-link.md`. Otherwise ensure a `requirement` label exists
    (`gh label create requirement ...`).
-5. **Team availability.** Check that `pm-team` and `dev-team` are installed
-   (their commands/agents resolve). If missing, guide the user to install them
-   (`/plugin install pm-team@maruti`, `/plugin install dev-team@maruti`). You
-   cannot install them silently.
+5. **Team availability.** `pm-team` and `dev-team` are declared **dependencies**
+   in this plugin's `plugin.json`, so Claude Code installs/enables them
+   transitively when `project-lead` is installed from the marketplace. Verify
+   they actually resolve (their commands/agents are available). If they don't —
+   e.g. a local-checkout install that bypassed the marketplace — guide the user
+   to add them (`/plugin install pm-team@maruti`, `/plugin install dev-team@maruti`);
+   you cannot install them silently.
 6. **Pointer.** Add a short "Project Lead" section to `AGENTS.md` and/or
    `CLAUDE.md` pointing future agents at `.project-memory/` and
    `docs/requirements/` and the `/project-lead` workflow.

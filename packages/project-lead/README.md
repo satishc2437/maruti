@@ -86,6 +86,8 @@ copilot plugin install project-lead@maruti
 
 For each platform, the marketplace-add line is one-time per machine; subsequent installs only need the install line. For local-checkout and project-local-copy alternatives, see [`claude-code/README.md`](claude-code/README.md#install) and [`github-copilot/README.md`](github-copilot/README.md).
 
+**Dependencies come with it.** The Project Lead delegates to `pm-team` and `dev-team`, so it declares them as **plugin dependencies** in its `plugin.json`. On **Claude Code**, installing `project-lead@maruti` from the marketplace installs/enables `pm-team` and `dev-team` transitively — you don't install them separately. (On **GitHub Copilot CLI**, install the two teams alongside it: `copilot plugin install pm-team@maruti` and `copilot plugin install dev-team@maruti`.)
+
 The Project Lead is designed to be installed into **all your repos** and bootstrapped once per repo, so future development across your projects follows the same model.
 
 ## Relationship to pm-team and dev-team
