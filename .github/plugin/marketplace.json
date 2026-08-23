@@ -42,7 +42,7 @@
     {
       "name": "project-lead",
       "description": "Stakeholder-facing Project Lead agent that owns requirements as official repo docs, keeps a Project Memory wiki and a linked GitHub Project Kanban, and delivers via guided handoff to pm-team and dev-team. Never writes specs or code itself.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "source": "./packages/project-lead/github-copilot"
     },
     {
