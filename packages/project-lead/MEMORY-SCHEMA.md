@@ -306,3 +306,56 @@ gh issue edit <requirement-issue> --add-sub-issue <child-issue>[,<child-issue>..
 The skill/agent contains the exact, current invocations; this section is a map,
 not a frozen contract — the Lead adapts to the installed `gh` version and the
 org's enabled features, always degrading to the documented fallback.
+
+---
+
+## 6. Distributed / multi-machine operation
+
+When features are distributed across multiple agent sessions and machines, some
+generated files merge cleanly and some do not. The rule is: **durable shared
+knowledge is committed; ephemeral per-session / per-machine working state is
+gitignored; and the one shared-but-append-only file uses a union merge.**
+Bootstrap (§ mode: bootstrap, step 7) writes the `.gitignore` and `.gitattributes`
+entries below.
+
+### Committed (durable, shared) — all of `.project-memory/`
+
+`overview.md`, `index.md`, `requirements-register.md`, `schema.md`,
+`project-link.md`, and every page under `wiki/` are the project's brain and
+record. Parallel sessions generally edit different pages, so conflicts are rare
+and, when they occur, are real semantic merges to resolve by hand.
+`project-link.md` holds platform/account-agnostic IDs (GraphQL node ids), not
+machine-specific values, so it is safe to share.
+
+### Gitignored (ephemeral, machine-local) — all of `.scrum/` (and `.worktrees/`)
+
+The teams' Scrum working memory — per-agent session journals (which embed
+**absolute worktree paths**), `plan.md`, `design.md`, `retrospective.md`,
+`watchdog-status.json`, and the cross-project `lessons.md` — is scratch state for
+one run on one machine. The deliverables of a run are its **PRs, issues, and
+board items**; distributed runs coordinate through GitHub, not through `.scrum/`
+files. `.gitignore` gets `.scrum/` and `.worktrees/`.
+
+### Union-merged (shared but append-only) — `.project-memory/log.md`
+
+The chronology is appended to by every session, which would conflict on every
+merge. `.gitattributes` gets `.project-memory/log.md merge=union`, so git
+concatenates both sides' entries instead of raising a conflict. Entries are
+prefixed `## [YYYY-MM-DD] <event> | <subject>`; if union merge interleaves them
+out of order, re-sort by date (identical duplicate lines collapse).
+
+### Lessons stay useful without merging
+
+Because raw `.scrum/lessons.md` is machine-local, cross-machine learning is
+preserved by having the Lead **ingest notable lessons into `.project-memory/wiki/`**
+(committed) rather than relying on the raw FIFO file.
+
+### Keep the Lead single-writer where you can
+
+By design the Lead is the **sole writer** of `.project-memory/` (Design rule 2).
+If one Lead session coordinates while only `dev-team` / `pm-team` execution is
+distributed, `.project-memory/` has a single writer and the union merge on
+`log.md` is only a safety net. Running multiple concurrent Lead sessions against
+the same wiki is supported by the rules above, but will occasionally require a
+manual merge on the rewritten summary files (`overview.md`, `index.md`,
+`requirements-register.md`).

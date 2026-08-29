@@ -159,6 +159,13 @@ The full memory layout, requirement doc schema, lifecycle, Definition of Ready, 
 - The teams keep their own `.scrum/` working memory; the Lead's
   `.project-memory/` is the higher-level, durable project wiki that references
   (never duplicates) team artifacts.
+- **Distributed / multi-machine runs.** To keep parallel agent sessions from
+  colliding, bootstrap gitignores the ephemeral, machine-local working state
+  (all of `.scrum/` — session journals, plans, retrospectives, watchdog status,
+  lessons — plus `.worktrees/`) while keeping the durable `.project-memory/` wiki
+  committed. The one append-only file, `.project-memory/log.md`, is set to
+  `merge=union` in `.gitattributes` so its chronology concatenates instead of
+  conflicting. See [`MEMORY-SCHEMA.md` § Distributed / multi-machine operation](MEMORY-SCHEMA.md#6-distributed--multi-machine-operation).
 
 ## Layout
 

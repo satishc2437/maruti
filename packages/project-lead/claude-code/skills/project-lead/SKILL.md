@@ -106,7 +106,22 @@ was created vs. already present.
 6. **Pointer.** Add a short "Project Lead" section to `AGENTS.md` and/or
    `CLAUDE.md` pointing future agents at `.project-memory/` and
    `docs/requirements/` and the `/project-lead` workflow.
-7. Append a `log.md` bootstrap entry and report a checklist of what is now set up.
+7. **Distributed-safe ignores (multi-machine runs).** So parallel agent sessions
+   on different machines never collide, split durable shared state from ephemeral
+   per-session state. Append these **idempotently** (never duplicate a line) and
+   commit both files:
+   - **`.gitignore`** must contain `.scrum/` and `.worktrees/`. The teams'
+     run-scoped working memory (session journals — which embed absolute worktree
+     paths and are therefore machine-specific — plus `plan.md`, `design.md`,
+     `retrospective.md`, `lessons.md`, and `watchdog-status.json`) and the
+     worktree checkouts are **machine-local and MUST NOT be committed**. The
+     durable record of that work lives in the PRs, issues, board, and this wiki.
+   - **`.gitattributes`** must contain `.project-memory/log.md merge=union` so the
+     append-only chronology auto-concatenates on merge instead of conflicting
+     (entries are timestamped — re-sort if ordering matters). `.project-memory/`
+     itself stays **committed**: it is the shared brain. See MEMORY-SCHEMA
+     [§ Distributed / multi-machine operation](../../MEMORY-SCHEMA.md#6-distributed--multi-machine-operation).
+8. Append a `log.md` bootstrap entry and report a checklist of what is now set up.
 
 ---
 
